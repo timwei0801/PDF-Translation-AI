@@ -1,6 +1,18 @@
-# 將 config.py 中的 OpenAI 配置改為 Anthropic
+# config.py 或主程式開頭
 import os
-import anthropic
+from dotenv import load_dotenv
+
+# 加載 .env 檔案中的環境變數
+load_dotenv()
+
+# 獲取環境變數
+API_KEY = os.getenv("CLAUDE_API_KEY")
+API_URL = os.getenv("CLAUDE_API_URL")
+MODEL_NAME = os.getenv("MODEL_NAME")
+
+# 驗證環境變數是否存在
+if not API_KEY:
+    raise ValueError("未設定 CLAUDE_API_KEY 環境變數。請在 .env 檔案中設定。")
 
 # 設置Anthropic API密鑰
 os.environ["ANTHROPIC_API_KEY"] = "your-api-key-here"
