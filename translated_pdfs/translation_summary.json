@@ -1,0 +1,24 @@
+{
+  "translation_time": "2025-05-11 05:01:02",
+  "total_pdfs": 1,
+  "processed_files": [
+    {
+      "original_pdf": "A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks.pdf",
+      "translated_pdf": "translated_A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks.pdf",
+      "translation_data": "translated_pdfs/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_translation_data.json"
+    }
+  ],
+  "api_usage": {
+    "total_requests": 28,
+    "total_input_chars": 32961,
+    "total_output_chars": 17639,
+    "request_types": {
+      "text": 20,
+      "table": 8
+    },
+    "domains": {
+      "general": 20
+    },
+    "avg_output_input_ratio": 0.5351475986772246
+  }
+}

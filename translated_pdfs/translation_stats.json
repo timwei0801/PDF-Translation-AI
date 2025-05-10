@@ -1,0 +1,13 @@
+{
+  "total_requests": 28,
+  "total_input_chars": 32961,
+  "total_output_chars": 17639,
+  "request_types": {
+    "text": 20,
+    "table": 8
+  },
+  "domains": {
+    "general": 20
+  },
+  "avg_output_input_ratio": 0.5351475986772246
+}

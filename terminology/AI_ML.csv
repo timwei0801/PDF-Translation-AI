@@ -1,0 +1,234 @@
+english,chinese,definition
+artificial intelligence,人工智能,計算機系統模擬人類智能的能力
+machine learning,機器學習,通過數據和經驗自動改進系統性能的計算機科學分支
+deep learning,深度學習,基於人工神經網絡的機器學習分支
+neural network,神經網絡,受人腦結構啟發的計算系統
+generative AI,生成式人工智能,能夠創建新內容的AI系統
+large language model,大型語言模型,基於大量文本數據訓練的神經網絡模型
+transformer,變換器模型,用於處理序列數據的神經網絡架構
+natural language processing,自然語言處理,使計算機能理解和生成人類語言的技術
+computer vision,計算機視覺,使計算機能解釋和理解視覺信息的領域
+reinforcement learning,強化學習,通過與環境互動學習最優策略的機器學習類型
+supervised learning,監督學習,使用標記數據進行訓練的機器學習方法
+unsupervised learning,無監督學習,使用未標記數據發現模式的機器學習方法
+semi-supervised learning,半監督學習,結合標記和未標記數據的學習方法
+transfer learning,遷移學習,將一個任務學到的知識應用到另一個相關任務的方法
+fine-tuning,微調,對預訓練模型進行針對性調整以適應特定任務
+few-shot learning,少樣本學習,使用極少量示例進行學習的能力
+zero-shot learning,零樣本學習,在沒有看過特定類別示例的情況下識別該類別的能力
+prompt engineering,提示工程,設計和優化輸入提示以獲得更好AI輸出的技術
+retrieval-augmented generation,檢索增強生成,通過檢索外部知識增強生成內容的技術
+vector database,向量數據庫,存儲和檢索向量嵌入的專用數據庫
+embedding,嵌入,將複雜對象（如單詞或圖像）轉換為數值向量的技術
+attention mechanism,注意力機制,使神經網絡關注輸入的特定部分的機制
+self-attention,自注意力,計算序列內元素之間關係的注意力機制
+multi-head attention,多頭注意力,並行計算多個不同注意力的機制
+encoder-decoder architecture,編碼器-解碼器架構,用於序列到序列轉換的神經網絡架構
+tokenization,標記化,將文本分割為基本單元（標記）的過程
+language model,語言模型,預測文本序列概率分布的統計模型
+autoregressive model,自迴歸模型,基於先前輸出預測下一個輸出的模型
+masked language model,遮蔽語言模型,預測被遮蔽單詞的語言模型
+multimodal learning,多模態學習,結合不同類型數據（如文本和圖像）的學習方法
+semantic search,語義搜索,基於內容含義而非關鍵詞匹配的搜索技術
+knowledge distillation,知識蒸餾,將大型模型的知識轉移到小型模型的技術
+model compression,模型壓縮,減小神經網絡大小和計算需求的技術
+quantization,量化,降低模型參數精度以減小模型大小的技術
+pruning,剪枝,移除神經網絡中不重要連接的技術
+batch normalization,批量正規化,穩定和加速神經網絡訓練的技術
+layer normalization,層正規化,針對單個樣本標準化層輸出的技術
+dropout,隨機失活,訓練期間隨機禁用神經元以防止過擬合的技術
+backpropagation,反向傳播,計算神經網絡梯度的算法
+gradient descent,梯度下降,最小化損失函數的優化算法
+stochastic gradient descent,隨機梯度下降,使用隨機子集數據的梯度下降變體
+learning rate,學習率,梯度下降中的步長參數
+optimizer,優化器,調整神經網絡權重以最小化損失的算法
+Adam optimizer,Adam優化器,結合動量和自適應學習率的優化算法
+cross-entropy loss,交叉熵損失,測量預測概率分布與真實分布差異的損失函數
+mean squared error,均方誤差,測量預測值與真實值差異平方的損失函數
+overfitting,過擬合,模型過度適應訓練數據而無法很好泛化的現象
+underfitting,欠擬合,模型無法充分學習訓練數據模式的現象
+regularization,正則化,防止過擬合的技術
+L1 regularization,L1正則化,使用絕對值懲罰的正則化方法
+L2 regularization,L2正則化,使用平方懲罰的正則化方法
+early stopping,提前停止,在驗證錯誤開始增加時停止訓練的技術
+data augmentation,數據增強,通過變換現有數據創建新訓練示例的技術
+bias,偏差,模型系統性錯誤的傾向
+variance,方差,模型對訓練數據小變化的敏感度
+bias-variance tradeoff,偏差-方差權衡,在機器學習中平衡偏差和方差的問題
+feature engineering,特徵工程,創建有助於機器學習性能的輸入特徵的過程
+dimensionality reduction,降維,減少數據集特徵數量的技術
+principal component analysis,主成分分析,通過找到最大方差方向降維的技術
+t-SNE,t-SNE,用於高維數據可視化的降維技術
+accuracy,準確率,正確預測的比例
+precision,精確率,正預測中真正例的比例
+recall,召回率,真正例中被正確預測的比例
+F1 score,F1分數,精確率和召回率的調和平均
+ROC curve,ROC曲線,不同閾值下真陽性率與假陽性率的圖
+AUC,曲線下面積,ROC曲線下的面積，用於評估分類器性能
+confusion matrix,混淆矩陣,顯示實際類別與預測類別關係的表格
+hyperparameter,超參數,在訓練前設置的模型參數
+grid search,網格搜索,系統性嘗試超參數組合的方法
+random search,隨機搜索,隨機選擇超參數組合的方法
+Bayesian optimization,貝葉斯優化,使用概率模型指導超參數搜索的方法
+cross-validation,交叉驗證,通過使用不同數據子集訓練和評估模型的驗證技術
+k-fold cross-validation,k折交叉驗證,將數據分成k部分進行交叉驗證的方法
+train-validation-test split,訓練-驗證-測試分割,將數據分為三部分的常見做法
+batch size,批次大小,每次網絡權重更新處理的樣本數
+epoch,迭代周期,處理整個訓練數據集一次的過程
+iteration,迭代,一次模型權重更新的過程
+inference,推理,使用訓練好的模型進行預測的過程
+deployment,部署,將機器學習模型整合到生產環境的過程
+model serving,模型服務,為用戶請求提供模型推理結果的系統
+online learning,在線學習,從連續數據流中逐步學習的方法
+offline learning,離線學習,使用靜態數據集一次性學習的方法
+label,標籤,數據樣本的真實輸出或類別
+feature,特徵,用於預測的輸入變量
+instance,實例,單個數據樣本
+dataset,數據集,訓練和評估模型的數據集合
+training set,訓練集,用於訓練模型的數據子集
+validation set,驗證集,用於調優超參數的數據子集
+test set,測試集,用於評估最終模型性能的數據子集
+ground truth,真實標籤,數據的真實或標準答案
+annotation,標註,為數據添加標籤或元數據的過程
+data leakage,數據洩漏,訓練數據意外包含測試數據信息的問題
+class imbalance,類別不平衡,不同類別樣本數量顯著不同的情況
+sampling,採樣,從總體中選擇子集的過程
+upsampling,上採樣,增加少數類別樣本數量的技術
+downsampling,下採樣,減少多數類別樣本數量的技術
+SMOTE,SMOTE,合成少數類過採樣技術
+time series forecasting,時間序列預測,基於過去觀測預測未來值的任務
+anomaly detection,異常檢測,識別異常數據點或模式的任務
+clustering,聚類,將相似數據點分組的無監督學習任務
+segmentation,分割,將數據（如圖像）分割為不同部分的技術
+classification,分類,將數據分配到預定義類別的任務
+regression,迴歸,預測連續輸出值的任務
+one-hot encoding,獨熱編碼,將分類變量轉換為二進制向量的方法
+word embedding,詞嵌入,將單詞表示為向量的技術
+Word2Vec,Word2Vec,基於上下文學習詞嵌入的技術
+GloVe,GloVe,基於共現統計學習詞嵌入的技術
+TF-IDF,TF-IDF,基於詞頻-逆文檔頻率的文本表示方法
+bag-of-words,詞袋模型,基於詞頻的文本表示方法
+n-gram,n元語法,連續n個單詞或字符的序列
+stemming,詞幹提取,將單詞簡化為詞幹的過程
+lemmatization,詞形還原,將單詞簡化為詞元的過程
+entity recognition,實體識別,識別文本中命名實體的任務
+sentiment analysis,情感分析,從文本中確定情感極性的任務
+ensemble learning,集成學習,組合多個模型預測的技術
+bagging,袋裝法,訓練多個並行模型並平均其預測的技術
+boosting,提升法,按順序訓練模型以糾正之前錯誤的技術
+random forest,隨機森林,基於決策樹的集成方法
+gradient boosting,梯度提升,使用梯度下降逐步改進模型的提升方法
+XGBoost,XGBoost,高效的梯度提升庫
+LightGBM,LightGBM,高效的梯度提升實現
+CatBoost,CatBoost,處理分類特徵的梯度提升實現
+decision tree,決策樹,基於特徵做決策的樹狀模型
+support vector machine,支持向量機,尋找最大間隔超平面的分類算法
+k-nearest neighbors,k最近鄰,基於最相似訓練樣本的分類或回歸算法
+naive Bayes,樸素貝葉斯,基於貝葉斯定理的分類算法
+logistic regression,邏輯迴歸,用於二分類的統計模型
+linear regression,線性迴歸,預測連續輸出的統計模型
+activation function,激活函數,引入神經網絡非線性的函數
+ReLU,ReLU,修正線性單元激活函數
+sigmoid,Sigmoid,S形激活函數，範圍為(0-1)
+tanh,雙曲正切,S形激活函數，範圍為(-1-1)
+softmax,Softmax,將向量轉換為概率分佈的函數
+LSTM,長短期記憶網絡,處理序列數據的特殊循環神經網絡
+GRU,門控循環單元,簡化版的LSTM
+RNN,循環神經網絡,處理序列數據的神經網絡類型
+CNN,卷積神經網絡,處理網格數據（如圖像）的神經網絡類型
+convolution,卷積,使用過濾器提取特徵的數學運算
+pooling,池化,減少特徵圖維度的下採樣操作
+max pooling,最大池化,提取區域最大值的池化操作
+average pooling,平均池化,計算區域平均值的池化操作
+fully connected layer,全連接層,每個神經元連接到前一層所有神經元的層
+residual connection,殘差連接,將輸入添加到層輸出的連接
+skip connection,跳躍連接,連接非相鄰層的路徑
+inception module,Inception模塊,使用不同大小卷積的並行路徑的網絡模塊
+bottleneck layer,瓶頸層,減少計算量的低維層
+model checkpoint,模型檢查點,訓練期間保存的模型狀態快照
+pre-training,預訓練,在特定任務前進行的通用訓練階段
+post-training quantization,訓練後量化,在模型訓練後應用的量化技術
+quantization-aware training,量化感知訓練,在訓練期間考慮量化效果的技術
+transfer learning,遷移學習,將一個任務學到的知識應用到新任務的技術
+domain adaptation,領域適應,適應不同數據分布的技術
+multi-task learning,多任務學習,同時學習多個相關任務的方法
+federated learning,聯邦學習,在分散設備上協作訓練而不共享原始數據的方法
+active learning,主動學習,選擇性請求標記最有價值數據點的學習策略
+meta-learning,元學習,學習如何學習的方法
+few-shot learning,少樣本學習,從少量標記示例學習的能力
+explainable AI,可解釋人工智能,使AI系統決策過程可理解的方法
+interpretability,可解釋性,理解模型行為和預測的能力
+black-box model,黑盒模型,內部工作方式不透明的模型
+feature importance,特徵重要性,衡量特徵對模型預測影響的度量
+LIME,LIME,用於解釋模型預測的局部可解釋近似方法
+SHAP,SHAP,基於博弈論的模型解釋方法
+adversarial example,對抗樣本,設計用於欺騙模型的輸入
+adversarial training,對抗訓練,使用對抗樣本訓練以增強模型魯棒性的方法
+data poisoning,數據投毒,通過操縱訓練數據損害模型性能的攻擊
+model inversion,模型反轉,從模型還原訓練數據的攻擊
+model stealing,模型竊取,複製黑盒模型功能的攻擊
+privacy-preserving machine learning,隱私保護機器學習,保護數據隱私的機器學習方法
+differential privacy,差分隱私,提供數學隱私保證的框架
+homomorphic encryption,同態加密,允許對加密數據進行計算的加密技術
+synthetic data,合成數據,人工生成模仿真實數據特性的數據
+data augmentation,數據增強,通過修改現有數據創建新訓練示例的技術
+curriculum learning,課程學習,按難度增加順序呈現訓練樣本的策略
+self-supervised learning,自監督學習,從未標記數據中創建監督信號的學習方法
+contrastive learning,對比學習,學習區分相似和不相似樣本的方法
+generative adversarial network,生成對抗網絡,包含生成器和判別器的生成模型架構
+variational autoencoder,變分自編碼器,生成潛在變量模型的自編碼器
+diffusion model,擴散模型,通過逐步添加和移除噪聲生成數據的模型
+flow-based model,基於流的模型,使用可逆變換的生成模型
+autoencoder,自編碼器,學習壓縮表示的無監督學習模型
+knowledge graph,知識圖譜,表示實體間關係的網絡結構
+graph neural network,圖神經網絡,處理圖結構數據的神經網絡
+node embedding,節點嵌入,將圖中節點映射到向量空間的技術
+message passing,消息傳遞,圖神經網絡中的信息傳播機制
+reinforcement learning from human feedback,基於人類反饋的強化學習,使用人類評價優化模型的方法
+prompt tuning,提示調整,優化連續提示向量而非模型權重的方法
+prefix tuning,前綴調整,在預訓練模型輸入添加可訓練向量的微調方法
+LoRA,LoRA,低秩自適應參數微調方法
+PEFT,參數高效微調,使用少量可訓練參數微調大型模型的方法
+instruction tuning,指令微調,使模型遵循指令的微調方法
+constitutional AI,憲法式人工智能,通過描述AI應遵循的原則指導模型行為的方法
+alignment,對齊,使AI系統行為與人類意圖和價值觀一致的過程
+reward model,獎勵模型,學習對模型輸出質量進行評分的模型
+RLHF,基於人類反饋的強化學習,使用人類反饋作為獎勵信號的強化學習方法
+LLM,大型語言模型,規模較大的自然語言處理模型
+hallucination,幻覺,模型生成看似合理但實際不準確的內容
+tokenizer,標記器,將文本分割成標記的工具
+context window,上下文窗口,模型能處理的輸入標記數量
+temperature,溫度,控制生成文本隨機性的參數
+top-k sampling,Top-K採樣,從概率最高的K個標記中採樣的方法
+top-p sampling,Top-P採樣,從累積概率超過P的標記子集中採樣的方法
+beam search,束搜索,在解碼時保留多個候選序列的搜索算法
+greedy decoding,貪婪解碼,在每一步選擇最高概率標記的解碼方法
+perplexity,困惑度,評估語言模型性能的指標
+BLEU score,BLEU分數,評估機器翻譯質量的指標
+ROUGE score,ROUGE分數,評估摘要質量的指標
+chain-of-thought,思維鏈,通過中間推理步驟改進模型推理的提示技術
+few-shot prompting,少樣本提示,在提示中包含少量示例的技術
+zero-shot prompting,零樣本提示,無需示例的推理能力
+text-to-image,文本到圖像,從文本描述生成圖像的模型
+text-to-video,文本到視頻,從文本描述生成視頻的模型
+text-to-speech,文本到語音,將文本轉換為口語的技術
+speech-to-text,語音到文本,將口語轉換為文本的技術
+OCR,光學字符識別,從圖像提取文本的技術
+MoE,專家混合,將輸入路由到專門子網絡的模型架構
+parameter,參數,模型中可學習的權重
+foundation model,基礎模型,在大量數據上預訓練的大型模型
+multimodal model,多模態模型,處理多種數據類型的模型
+agent,智能體,能自主執行任務的AI系統
+model distillation,模型蒸餾,將大模型知識轉移到小模型的技術
+mixture of experts,專家混合,由多個專家網絡組成的模型架構
+multi-head attention,多頭注意力,並行計算多個注意力權重的機制
+contextual embedding,上下文嵌入,根據上下文生成的詞表示
+position embedding,位置嵌入,編碼序列中token位置信息的技術
+retrieval-augmented generation,檢索增強生成,通過外部知識增強生成質量的技術
+semantic similarity,語義相似度,衡量文本含義相似程度的度量
+text summarization,文本摘要,生成文本關鍵信息摘要的任務
+question answering,問答,根據上下文回答問題的任務
+information retrieval,信息檢索,從大量數據中檢索相關信息的技術
+reasoning,推理,從給定信息得出邏輯結論的能力
+inductive bias,歸納偏置,模型架構中的假設和限制
+catastrophic forgetting,災難性遺忘,新學習任務干擾之前學到知識的現象

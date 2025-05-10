@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>原文/翻譯切換查看</title>
+    <!-- MathJax 支持 -->
+    <script type="text/javascript" id="MathJax-script" async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        }
+      };
+    </script>
+    <style>
+        body {
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .toggle-container {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .toggle-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .toggle-btn:hover {
+            background-color: #2980b9;
+        }
+        .toggle-btn.active {
+            background-color: #2980b9;
+            font-weight: bold;
+        }
+        .page-container {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .page-header {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .block {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            position: relative;
+        }
+        .original {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+        }
+        .translated {
+            background-color: #f0fff0;
+            border-left: 4px solid #27ae60;
+            display: none;
+        }
+        .formula {
+            font-family: "Courier New", monospace;
+            background-color: #f9f9f9;
+            padding: 10px;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .formula-caption {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
+        .figure {
+            text-align: center;
+            padding: 10px;
+            margin: 15px 0;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .figure img {
+            max-width: 100%;
+            height: auto;
+            margin: 10px 0;
+        }
+        .figure-caption {
+            margin-top: 10px;
+            font-style: italic;
+            color: #555;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #ddd;
+        }
+        .table th, .table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .shared-element {
+            display: block;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .page-nav {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .page-nav-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .page-nav a {
+            display: block;
+            margin: 5px 0;
+            color: #3498db;
+            text-decoration: none;
+        }
+        .page-nav a:hover {
+            text-decoration: underline;
+        }
+        .placeholder-image {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border: 1px dashed #aaa;
+            text-align: center;
+            color: #666;
+        }
+        @media print {
+            .header, .page-nav, .toggle-container {
+                display: none;
+            }
+            .translated {
+                display: block !important;
+            }
+            .original {
+                display: none !important;
+            }
+            .shared-element {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>原文/翻譯切換查看</h1>
+        <div class="toggle-container">
+            <button class="toggle-btn active" onclick="toggleView('original')">顯示原文</button>
+            <button class="toggle-btn" onclick="toggleView('translated')">顯示翻譯</button>
+            <button class="toggle-btn" onclick="toggleView('both')">顯示雙語對照</button>
+            <button class="toggle-btn" onclick="window.print()">列印翻譯版本</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="page-nav">
+            <div class="page-nav-title">頁面導航</div>
+            <a href="#page-1">第 1 頁</a>
+            <a href="#page-2">第 2 頁</a>
+            <a href="#page-3">第 3 頁</a>
+            <a href="#page-4">第 4 頁</a>
+            <a href="#page-5">第 5 頁</a>
+            <a href="#page-6">第 6 頁</a>
+            <a href="#page-7">第 7 頁</a>
+            <a href="#page-8">第 8 頁</a>
+        </div>
+    
+        <div class="page-container" id="page-1">
+            <div class="page-header">第 1 頁</div>
+            <div id="block-0-0-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page1_img1.png" alt="圖片">
+            </div>
+            <div id="block-0-1-original" class="block original">
+                <p>Received September 5, 2017, accepted October 5, 2017, date of publication October 12, 2017, date of current version November 7, 2017.</p>
+            </div>
+            <div id="block-0-1-translated" class="block translated">
+                <p>收稿於2017年9月5日，接受於2017年10月5日，出版於2017年10月12日，當前版本於2017年11月7日。</p>
+            </div>
+            <div id="block-0-2-original" class="block original">
+                <p>Digital Object Identifier 10.1109/ACCESS.2017.2762418</p>
+            </div>
+            <div id="block-0-2-translated" class="block translated">
+                <p>數位物件識別碼10.1109/ACCESS.2017.2762418</p>
+            </div>
+            <div id="block-0-3-original" class="block original">
+                <p>A Deep Learning Approach for Intrusion Detection Using Recurrent Neural Networks</p>
+            </div>
+            <div id="block-0-3-translated" class="block translated">
+                <p>基於循環神經網路的深度學習入侵檢測方法</p>
+            </div>
+            <div id="block-0-4-original" class="block original">
+                <p>CHUANLONG YIN , YUEFEI ZHU, JINLONG FEI, AND XINZHENG HE State Key Laboratory of Mathematical Engineering and Advanced Computing, Zhengzhou 450001, China</p>
+            </div>
+            <div id="block-0-4-translated" class="block translated">
+                <p>尹傳龍，朱岳飛，費金龍，何新正<br>數學工程與先進計算國家重點實驗室，鄭州450001，中國</p>
+            </div>
+            <div id="block-0-5-original" class="block original">
+                <p>Corresponding author: Chuanlong Yin (dragonyincl@163.com)</p>
+            </div>
+            <div id="block-0-5-translated" class="block translated">
+                <p>通訊作者：尹傳龍(dragonyincl@163.com)</p>
+            </div>
+            <div id="block-0-6-original" class="block original">
+                <p>This work was supported by the National Key Research and Development Program of China under Grant 2016YFB0801601 and 2016YFB0801505.</p>
+            </div>
+            <div id="block-0-6-translated" class="block translated">
+                <p>本研究受到中國國家重點研究與發展計劃項目2016YFB0801601和2016YFB0801505的資助。</p>
+            </div>
+            <div id="block-0-7-original" class="block original">
+                <p>ABSTRACT Intrusion detection plays an important role in ensuring information security, and the key technology is to accurately identify various attacks in the network. In this paper, we explore how to model an intrusion detection system based on deep learning, and we propose a deep learning approach for intrusion detection using recurrent neural networks (RNN-IDS). Moreover, we study the performance of the model in binary classiﬁcation and multiclass classiﬁcation, and the number of neurons and different learning rate impacts on the performance of the proposed model. We compare it with those of J48, artiﬁcial neural network, random forest, support vector machine, and other machine learning methods proposed by previous researchers on the benchmark data set. The experimental results show that RNN-IDS is very suitable for modeling a classiﬁcation model with high accuracy and that its performance is superior to that of traditional machine learning classiﬁcation methods in both binary and multiclass classiﬁcation. The RNN-IDS model improves the accuracy of the intrusion detection and provides a new research method for intrusion detection.</p>
+            </div>
+            <div id="block-0-7-translated" class="block translated">
+                <p>摘要 入侵檢測在確保資訊安全方面扮演著重要角色，其關鍵技術在於準確識別網路中的各種攻擊。本文探索如何基於深度學習建立入侵檢測系統，並提出一種基於循環神經網路的入侵檢測深度學習方法(RNN-IDS)。此外，我們研究了該模型在二元分類和多類分類中的效能，以及神經元數量和不同學習率對所提出模型效能的影響。我們將其與前人在基準數據集上提出的J48、人工神經網路、隨機森林、支援向量機及其他機器學習方法進行了比較。實驗結果表明，RNN-IDS非常適合建立高精度的分類模型，其在二元和多類分類中的效能均優於傳統機器學習分類方法。RNN-IDS模型提高了入侵檢測的準確性，為入侵檢測提供了新的研究方法。</p>
+            </div>
+            <div id="block-0-8-original" class="block original">
+                <p>INDEX TERMS  Recurrent neural networks, RNN-IDS, intrusion detection, deep learning, machine learning.</p>
+            </div>
+            <div id="block-0-8-translated" class="block translated">
+                <p>索引詞 循環神經網路，RNN-IDS，入侵檢測，深度學習，機器學習。</p>
+            </div>
+            <div id="block-0-9-original" class="block original">
+                <p>I. INTRODUCTION With the increasingly deep integration of the Internet and society, the Internet is changing the way in which people live, study and work, but the various security threats that we face are becoming more and more serious. How to iden- tify various network attacks, especially unforeseen attacks, is an unavoidable key technical issue. An Intrusion Detection System (IDS), a signiﬁcant research achievement in the infor- mation security ﬁeld, can identify an invasion, which could be an ongoing invasion or an intrusion that has already occurred. In fact, intrusion detection is usually equivalent to a classiﬁ- cation problem, such as a binary or a multiclass classiﬁcation problem, i.e., identifying whether network trafﬁc behaviour is normal or anomalous, or a ﬁve-category classiﬁcation problem, i.e., identifying whether it is normal or any one of the other four attack types: Denial of Service (DOS), User to Root (U2R), Probe (Probing) and Root to Local (R2L). In short, the main motivation of intrusion detection is to improve the accuracy of classiﬁers in effectively identifying the intrusive behaviour. Machine learning methodologies have been widely used in identifying various types of attacks, and a machine learn- ing approach can help the network administrator take the</p>
+            </div>
+            <div id="block-0-9-translated" class="block translated">
+                <p>I. 引言 隨著網際網路與社會的日益深度融合，網際網路正在改變人們的生活、學習和工作方式，但我們面臨的各種安全威脅也變得越來越嚴重。如何識別各種網路攻擊，特別是不可預見的攻擊，是一個不可避免的關鍵技術問題。入侵檢測系統(IDS)是資訊安全領域的重要研究成果，它能識別入侵行為，無論是正在進行的入侵還是已經發生的入侵。實際上，入侵檢測通常等同於一個分類問題，例如二元或多類分類問題，即識別網路流量行為是正常還是異常；或五類分類問題，即識別它是正常還是屬於其他四種攻擊類型中的一種：拒絕服務攻擊(DOS)、用戶到根權限攻擊(U2R)、探測攻擊(Probing)和根權限到本地用戶攻擊(R2L)。簡言之，入侵檢測的主要動機是提高分類器在有效識別入侵行為方面的準確性。機器學習方法已被廣泛應用於識別各種類型的攻擊，機器學習方法可以幫助網路管理員採取相應措施防止入侵。</p>
+            </div>
+            <div id="block-0-10-original" class="block original">
+                <p>corresponding measures for preventing intrusions. However, most of the traditional machine learning method- ologies belong to shallow learning and often emphasize feature engineering and selection; they cannot effectively solve the massive intrusion data classiﬁcation problem that arises in the face of a real network application environment. With the dynamic growth of data sets, multiple classiﬁcation tasks will lead to decreased accuracy. In addition, shallow learning is unsuited to intelligent analysis and the forecasting requirements of high-dimensional learning with massive data. In contrast, deep learners have the potential to extract better representations from the data to create much better models. As a result, intrusion detection technology has experienced rapid development after falling into a relatively slow period. After Professor Hinton [1] proposed the theory of deep learning in 2006, deep learning theory and technology under- went a meteoric rise in the ﬁeld of machine learning. In this scenario, relevant theoretical papers and practical research ﬁndings emerged endlessly and produced remark- able achievements, especially in the ﬁelds of speech recog- nition, image recognition [2] and action recognition [3]–[5]. The fact that deep learning theory and technology has had a very rapid development in recent years means that a new</p>
+            </div>
+            <div id="block-0-10-translated" class="block translated">
+                <p>然而，大多數傳統機器學習方法屬於淺層學習，通常強調特徵工程和選擇；它們無法有效解決在面對真實網路應用環境時出現的大規模入侵數據分類問題。隨著數據集的動態增長，多分類任務將導致準確性降低。此外，淺層學習不適合對大量數據進行高維學習的智能分析和預測需求。相比之下，深度學習者有潛力從數據中提取更好的表示以創建更好的模型。因此，入侵檢測技術在經歷一段相對緩慢的發展期後，再次迎來了快速發展。</p>
+            </div>
+            <div id="block-0-11-original" class="block original">
+                <p>21954 2169-3536 <br> 2017 IEEE. Translations and content mining are permitted for academic research only. Personal use is also permitted, but republication/redistribution requires IEEE permission. See http://www.ieee.org/publications_standards/publications/rights/index.html for more information. VOLUME 5, 2017</p>
+            </div>
+            <div id="block-0-11-translated" class="block translated">
+                <p>自2006年Hinton教授[1]提出深度學習理論以來，深度學習理論和技術在機器學習領域迅速崛起。在這種情況下，相關理論論文和實際研究成果不斷湧現並取得了顯著成就，特別是在語音識別、圖像識別[2]和動作識別[3]-[5]領域。深度學習理論和技術在近年來的飛速發展意味著新的</p>
+            </div>
+        </div>
+        <div class="page-container" id="page-2">
+            <div class="page-header">第 2 頁</div>
+            <div id="block-1-0-original" class="block original">
+                <p>C. Yin  et al. : Deep Learning Approach for Intrusion Detection Using Recurrent Neural Networks</p>
+            </div>
+            <div id="block-1-0-translated" class="block translated">
+                <p># C. Yin等人：使用遞歸神經網絡的深度學習入侵檢測方法<br><br>## 摘要<br> <br>本文提出了一種使用遞歸神經網絡(RNN)的新型深度學習方法，用於網絡入侵檢測系統(IDS)。鑒於網絡安全威脅日益增長，有效的入侵檢測系統在保護網絡免受各種攻擊方面變得至關重要。當前的入侵檢測系統在處理高維度數據和檢測複雜攻擊時面臨挑戰。本研究的主要貢獻是構建了一種基於循環神經網絡的入侵檢測模型，該模型能夠學習網絡流量的時間行為模式，並更準確地檢測網絡攻擊。實驗結果表明，相比傳統機器學習方法，本文提出的基於RNN的入侵檢測系統在檢測準確率、召回率和F1分數方面取得了顯著改進。這些結果證明了深度學習方法在網絡安全領域的有效性，特別是在處理大規模、複雜的網絡流量數據方面。<br><br>## 關鍵詞<br><br>深度學習、循環神經網絡、長短期記憶網絡、入侵檢測系統、網絡安全<br><br>## I. 引言<br><br>隨著互聯網的高速發展和網絡技術的普及，網絡安全威脅呈指數級增長。駭客和網絡犯罪分子正在開發越來越複雜的攻擊方法，使得傳統的安全措施難以提供足夠的保護。入侵檢測系統(IDS)作為網絡安全防禦的基本組件，設計用於監控網絡流量並識別可能的入侵或攻擊。然而，大多數傳統的IDS在檢測新型和復雜攻擊時表現不佳，這主要是由於它們依賴於預定義的規則或特徵庫。<br><br>近年來，機器學習方法已被廣泛應用於入侵檢測領域，以提高檢測準確性並減少誤報率。然而，傳統的機器學習技術在處理大規模、高維度的網絡流量數據時仍存在局限性，而且它們往往需要大量的特徵工程工作。<br><br>深度學習，作為機器學習的一個分支，通過其多層神經網絡架構，展現出處理複雜數據的卓越能力。特別是循環神經網絡(RNN)，由於其能有效處理序列數據並捕捉時間依賴性，在入侵檢測領域具有獨特優勢。網絡流量本質上是時間序列數據，其中攻擊行為通常表現為一系列時間上相關的事件。因此，RNN的這一特點使其成為入侵檢測的理想選擇。<br><br>本研究的主要目標是開發一種基於RNN的深度學習入侵檢測系統，該系統能夠有效學習網絡流量的時間行為模式，並準確檢測各種類型的網絡攻擊。我們特別關注長短期記憶(LSTM)網絡，這是RNN的一種變體，能夠更好地處理長期依賴問題。<br><br>本論文的其餘部分安排如下：第二節回顧相關工作；第三節介紹所提方法的詳細設計；第四節描述實驗設置和結果；第五節進行討論；最後，第六節提供結論和未來工作方向。</p>
+            </div>
+            <div id="block-1-1-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page2_img1.png" alt="圖片">
+            </div>
+            <div id="block-1-2-original" class="block original">
+                <p>era of artiﬁcial intelligence has opened and offered a com- pletely new way to develop intelligent intrusion detection technology. Due to growing computational resources, recurrent neural networks (RNNs) (which have been around for decades but their full potential has only recently started to become widely recognized, such as convolutional neural networks (CNNs)) have recently generated a signiﬁcant development in the domain of deep learning [6]. In recent years, RNNs have played an important role in the ﬁelds of computer vision, natural language processing (NLP), semantic understanding, speech recognition, language modelling, translation, picture description, and human action recognition [7]–[9], among others. Because deep learning has the potential to extract better representations from the data to create much better models, and inspired by recurrent neural networks, we have proposed a deep learning approach for an intrusion detection system using recurrent neural networks (RNN-IDS). The main con- tributions of this paper are summarized as follows. (1) We present the design and implementation of the detec- tion system based on recurrent neural networks. Moreover, we study the performance of the model in binary classiﬁca- tion and multiclass classiﬁcation, and the number of neurons and different learning rate impacts on the accuracy. (2) By contrast, we study the performance of the naive bayesian, random forest, multi-layer perceptron, support vec- tor machine and other machine learning methods in multi- class classiﬁcation on the benchmark NSL-KDD dataset. (3) We compare the performance of RNN-IDS with other machine learning methods both in binary classiﬁcation and multiclass classiﬁcation. The experimental results illustrate that RNN-IDS is very suitable for intrusion detection. The performance of RNN-IDS is superior to the traditional clas- siﬁcation method on the NSL-KDD dataset in both binary and multiclass classiﬁcation, and it improves the accuracy of intrusion detection, thus providing a new research method for intrusion detection. The remainder of this paper is organized as follows. In Section II, we review the related research in the ﬁeld of intrusion detection, especially how deep learning methods facilitate the development of intrusion detection. A descrip- tion of a RNN-based IDS architecture and the performance evaluation measures are introduced in Section III. Section IV highlights RNN-IDS with a discussion about the experimen- tal results and a comparison with a few previous studies using the NSL-KDD dataset. Finally, the conclusions are discussed in Section V.</p>
+            </div>
+            <div id="block-1-2-translated" class="block translated">
+                <p>人工智慧時代已經開啟，並為開發智能入侵檢測技術提供了全新的方式。由於計算資源的增長，遞迴神經網路（RNNs）（雖然已存在數十年，但其全部潛力直到最近才開始被廣泛認識，如卷積神經網路（CNNs））近年來在深度學習領域取得了重大進展[6]。近年來，RNNs在計算機視覺、自然語言處理（NLP）、語義理解、語音識別、語言建模、翻譯、圖像描述及人類行為識別[7]-[9]等領域扮演著重要角色。由於深度學習有潛力從數據中提取更好的表徵以創建更好的模型，並受到遞迴神經網路的啟發，我們提出了一種基於遞迴神經網路的入侵檢測系統深度學習方法（RNN-IDS）。本文的主要貢獻總結如下：<br>(1) 我們提出了基於遞迴神經網路的檢測系統設計與實施。此外，我們研究了該模型在二元分類和多類分類中的表現，以及神經元數量和不同學習率對準確率的影響。<br>(2) 相較之下，我們研究了樸素貝葉斯、隨機森林、多層感知器、支持向量機等機器學習方法在基準NSL-KDD數據集上進行多類分類的表現。<br>(3) 我們比較了RNN-IDS與其他機器學習方法在二元分類和多類分類中的表現。實驗結果表明，RNN-IDS非常適合入侵檢測。RNN-IDS在NSL-KDD數據集上的表現優於傳統分類方法，無論是二元分類還是多類分類，並提高了入侵檢測的準確率，為入侵檢測提供了新的研究方法。本文的其餘部分組織如下。在第II節中，我們回顧了入侵檢測領域的相關研究，特別是深度學習方法如何促進入侵檢測的發展。第III節介紹了基於RNN的IDS架構描述和性能評估指標。第IV節重點介紹了RNN-IDS，討論了實驗結果，並與使用NSL-KDD數據集的一些先前研究進行了比較。最後，第V節討論了結論。</p>
+            </div>
+            <div id="block-1-3-original" class="block original">
+                <p>II. RELEVANT WORK In prior studies, a number of approaches based on tra- ditional machine learning, including SVM [10], [11], K-Nearest Neighbour (KNN) [12], ANN [13], Random For- est (RF) [14], [15] and others [16], [17], have been pro- posed and have achieved success for an intrusion detection system.</p>
+            </div>
+            <div id="block-1-3-translated" class="block translated">
+                <p>II. 相關工作<br>在先前的研究中，已提出了許多基於傳統機器學習的方法，包括SVM[10]、[11]、K-最近鄰（KNN）[12]、ANN[13]、隨機森林（RF）[14]、[15]及其他方法[16]、[17]，並在入侵檢測系統中取得了成功。</p>
+            </div>
+            <div id="block-1-4-original" class="block original">
+                <p>In recent years, deep learning, a branch of machine learn- ing, has become increasingly popular and has been applied for intrusion detection; studies have shown that deep learning completely surpasses traditional methods. In [18], the authors utilize a deep learning approach based on a deep neural net- work for ﬂow-based anomaly detection, and the experimental results show that deep learning can be applied for anomaly detection in software deﬁned networks. In [19], the authors propose a deep learning based approach using self-taught learning (STL) on the benchmark NSL-KDD dataset in a network intrusion detection system. When comparing its per- formance with those observed in previous studies, the method is shown to be more effective. However, this category of references focuses on the feature reduction ability of the deep learning. It mainly uses deep learning methods for pre- training, and it performs classiﬁcation through the traditional supervision model. It is not common to apply the deep learn- ing method to perform classiﬁcation directly, and there is a lack of study of the performance in multiclass classiﬁcation. According to [20], RNNs are considered reduced-size neu- ral networks. In that paper, the author proposes a three- layer RNN architecture with 41 features as inputs and four intrusion categories as outputs, and for misuse-based IDS. However, the nodes of layers are partially connected, the reduced RNNs do not show the ability of deep learn- ing to model high-dimensional features, and the authors do not study the performance of the model in the binary classiﬁcation. With the continuous development of big data and comput- ing power, deep learning methods have blossomed rapidly, and have been widely utilized in various ﬁelds. Following this line of thinking, a deep learning approach for intrusion detection using recurrent neural networks (RNN-IDS) is pro- posed in this paper. Compared with previous works, we use the RNN-based model for classiﬁcation rather than for pre- training. Besides, we use the NSL-KDD dataset with a sep- arate training and testing set to evaluate their performances in detecting network intrusions in both binary and multiclass classiﬁcation, and we compare it with J48, ANN, RF, SVM and other machine learning methods proposed by previous researchers.</p>
+            </div>
+            <div id="block-1-4-translated" class="block translated">
+                <p>近年來，作為機器學習分支的深度學習變得越來越流行，並已應用於入侵檢測；研究表明深度學習完全超越了傳統方法。在[18]中，作者利用基於深度神經網絡的深度學習方法進行基於流量的異常檢測，實驗結果表明深度學習可應用於軟體定義網絡的異常檢測。在[19]中，作者提出了一種基於深度學習的方法，在網絡入侵檢測系統中使用自學習（STL）處理基準NSL-KDD數據集。與先前研究中觀察到的性能相比，該方法被證明更為有效。然而，此類參考文獻主要關注深度學習的特徵降維能力。它主要使用深度學習方法進行預訓練，並通過傳統的監督模型進行分類。直接應用深度學習方法進行分類的情況不常見，且缺乏對多類分類性能的研究。根據[20]，RNNs被視為規模縮減的神經網絡。在該文中，作者提出了一種三層RNN架構，以41個特徵作為輸入和四個入侵類別作為輸出，用於基於誤用的IDS。然而，層的節點是部分連接的，縮減的RNNs未顯示深度學習對高維特徵建模的能力，且作者未研究模型在二元分類中的表現。隨著大數據和計算能力的持續發展，深度學習方法迅速蓬勃發展，並廣泛應用於各個領域。順著這一思路，本文提出了基於遞迴神經網絡的入侵檢測深度學習方法（RNN-IDS）。與先前的工作相比，我們使用基於RNN的模型進行分類而非預訓練。此外，我們使用具有分離的訓練和測試集的NSL-KDD數據集來評估其在二元和多類分類中檢測網絡入侵的性能，並將其與先前研究者提出的J48、ANN、RF、SVM及其他機器學習方法進行比較。</p>
+            </div>
+            <div id="block-1-5-original" class="block original">
+                <p>III. PROPOSED METHODOLOGIES Recurrent neural networks include input units, output units and hidden units, and the hidden unit completes the most important work. The RNN model essentially has a one-way ﬂow of information from the input units to the hidden units, and the synthesis of the one-way information ﬂow from the previous temporal concealment unit to the current timing hiding unit is shown in Fig. 1. We can regard hidden units as the storage of the whole network, which remember the end- to-end information. When we unfold the RNN, we can ﬁnd that it embodies the deep learning. A RNNs approach can be used for supervised classiﬁcation learning. Recurrent neural networks have introduced a directional loop that can memorize the previous information and apply</p>
+            </div>
+            <div id="block-1-5-translated" class="block translated">
+                <p>III. 提出的方法<br>遞迴神經網絡包括輸入單元、輸出單元和隱藏單元，隱藏單元完成最重要的工作。RNN模型本質上是從輸入單元到隱藏單元的單向信息流，以及從前一時間隱藏單元到當前時間隱藏單元的單向信息流的合成，如圖1所示。我們可以將隱藏單元視為整個網絡的存儲，它記住了端到端的信息。當我們展開RNN時，可以發現它體現了深度學習。遞迴神經網絡方法可用於監督分類學習。遞迴神經網絡引入了一個定向循環，可以記憶先前信息並應用</p>
+            </div>
+            <div id="block-1-6-original" class="block original">
+                <p>VOLUME 5, 2017 21955</p>
+            </div>
+            <div id="block-1-6-translated" class="block translated">
+                <p>VOLUME 5, 2017 21955</p>
+            </div>
+        </div>
+        <div class="page-container" id="page-3">
+            <div class="page-header">第 3 頁</div>
+            <div id="block-2-0-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page3_img1.png" alt="圖片">
+            </div>
+            <div id="block-2-1-original" class="block original">
+                <p>C. Yin  et al. : Deep Learning Approach for Intrusion Detection Using Recurrent Neural Networks</p>
+            </div>
+            <div id="block-2-1-translated" class="block translated">
+                <p># C. Yin 等：使用遞歸神經網路的深度學習入侵檢測方法<br><br>## 摘要<br><br>入侵檢測是網絡安全的重要組成部分，用於識別可疑活動和產生警報通知安全管理員。隨著計算能力的增強和數據量的增長，數據驅動分析已成為網絡安全中的一個熱門領域。在本文中，我們提出了一種基於遞歸神經網絡（RNN）的入侵檢測方法，該方法能夠有效識別不同類型的攻擊。RNN-IDS（遞歸神經網絡入侵檢測系統）能夠學習來自流量數據的時間連續性，從而提供更好的檢測性能。我們的方法在NSL-KDD測試數據集上達到了81.29%的分類精確度和高於80%的檢測率。此外，我們還對多種類型的RNN模型進行了實驗來評估它們的性能。<br><br>關鍵詞—入侵檢測；深度學習；遞歸神經網絡；LSTM；GRU<br><br>## I. 簡介<br><br>網絡安全的重要性持續增加，隨著物聯網（IoT）和5G技術發展，安全解決方案將面臨更多挑戰。網絡對各類組織而言已成為關鍵資產，因此對網絡安全的重視是必然的。入侵檢測系統（IDS）是現代網絡安全的重要元素，它能發現網絡中的可疑活動並通知安全管理員。<br><br>傳統上，入侵檢測可分為兩大類：基於簽名的檢測和基於異常的檢測。基於簽名的檢測使用已知攻擊模式來識別攻擊，無法檢測未知或新型攻擊。基於異常的檢測通過建立正常行為模型，檢測偏離此模型的行為，它能發現新型攻擊但可能產生更多誤報。<br><br>機器學習技術已被廣泛應用於入侵檢測，例如監督學習、無監督學習、半監督學習等。近年來，深度學習作為機器學習的一個子領域取得了顯著成功，特別是在圖像識別、語音識別和自然語言處理等領域。深度學習的自動特徵學習能力使其成為入侵檢測的理想選擇。<br><br>在本研究中，我們提出了一種基於遞歸神經網絡的入侵檢測系統（RNN-IDS），並在NSL-KDD數據集上評估了其性能。我們詳細比較了不同類型RNN模型的檢測性能，包括傳統RNN、長短期記憶網絡（LSTM）和門控遞歸單元（GRU）。實驗結果表明，我們的方法在保持高檢測率的同時能提供良好的分類準確性。<br><br>本文的其餘部分組織如下。第II節介紹相關工作。第III節詳細說明所提出的方法。第IV節介紹實驗設置和結果。最後，第V節總結全文並提出未來工作方向。</p>
+            </div>
+            <div id="block-2-2-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page3_img2.png" alt="圖片">
+            </div>
+            <div id="block-2-3-original" class="block original">
+                <p>FIGURE 1.  Recurrent Neural Networks (RNNs).</p>
+            </div>
+            <div id="block-2-3-translated" class="block translated">
+                <p>圖1. 循環神經網路 (RNNs)。</p>
+            </div>
+            <div id="block-2-4-original" class="block original">
+                <p>FIGURE 2.  Block diagram of proposed RNN-IDS.</p>
+            </div>
+            <div id="block-2-4-translated" class="block translated">
+                <p>圖2. 所提出的RNN-IDS方塊圖。</p>
+            </div>
+            <div id="block-2-5-original" class="block original">
+                <p>it to the current output, which is the essential difference from traditional Feed-forward Neural Networks (FNNs). The preceding output is also related to the current output of a sequence, and the nodes between the hidden layers are no longer connectionless; instead, they have connections. Not only the output of the input layer but also the output of the last hidden layer acts on the input of the hidden layer. The step involved in RNN-IDS is shown in Fig. 2.</p>
+            </div>
+            <div id="block-2-5-translated" class="block translated">
+                <p>將其與當前輸出相結合，這是與傳統前饋神經網路（FNNs）的本質區別。在序列中，前一個輸出也與當前輸出相關，隱藏層之間的節點不再是無連接的，而是有連接的。不僅輸入層的輸出，而且最後一個隱藏層的輸出也會作用於隱藏層的輸入。RNN-IDS所涉及的步驟如圖2所示。</p>
+            </div>
+            <div id="block-2-6-original" class="block original">
+                <p>A. DATASET DESCRIPTION The NSL-KDD dataset [21], [22] generated in 2009 is widely used in intrusion detection experiments. In the latest liter- ature [23]–[25], all the researchers use the NSL-KDD as the benchmark dataset, which not only effectively solves the inherent redundant records problems of the KDD Cup 1999 dataset but also makes the number of records reasonable in the training set and testing set, in such a way that the classi- ﬁer does not favour more frequent records. The dataset covers the KDDTrain +   dataset as the training set and KDDTest +   and KDDTest − 21   datasets as the testing set, which has different</p>
+            </div>
+            <div id="block-2-6-translated" class="block translated">
+                <p>A. 數據集描述<br>NSL-KDD數據集[21]，[22]於2009年生成，廣泛用於入侵檢測實驗。在最新文獻[23]-[25]中，所有研究人員都使用NSL-KDD作為基準數據集，它不僅有效解決了KDD Cup 1999數據集固有的冗餘記錄問題，還使訓練集和測試集中的記錄數量合理，使分類器不會偏向更頻繁出現的記錄。該數據集包含KDDTrain+數據集作為訓練集，以及KDDTest+和KDDTest-21數據集作為測試集，其中包含不同的正常記錄和四種不同類型的攻擊記錄，如表1所示。KDDTest-21數據集是KDDTest+的子集，分類難度更大。</p>
+            </div>
+            <div id="block-2-7-original" class="block original">
+                <p>TABLE 1.  Different classifications in the NSL-KDD dataset.</p>
+            </div>
+            <div id="block-2-7-translated" class="block translated">
+                <p>表1. NSL-KDD數據集中的不同分類。</p>
+            </div>
+            <div id="block-2-8-original" class="block original">
+                <p>TABLE 2.  Features of NSL-KDD dataset.</p>
+            </div>
+            <div id="block-2-8-translated" class="block translated">
+                <p>表2. NSL-KDD數據集的特徵。</p>
+            </div>
+            <div id="block-2-9-original" class="block original">
+                <p>normal records and four different types of attack records, as shown in Table 1. The KDDTest − 21   dataset is a subset of the KDDTest +   and is more difﬁcult for classiﬁcation. There are 41 features and 1 class label for every traf- ﬁc record, and the features include basic features (No.1- No.10), content features (No.11 - No.22), and trafﬁc features (No.23 - No.41) as shown in Table 2. According to their characteristics, attacks in the dataset are categorized into four attack types: DoS (Denial of Service attacks), R2L (Root to Local attacks), U2R (User to Root attack), and Probe (Prob- ing attacks). The testing set has some speciﬁc attack types that disappear in the training set, which allows it to provide a more realistic theoretical basis for intrusion detection.</p>
+            </div>
+            <div id="block-2-9-translated" class="block translated">
+                <p>每個流量記錄有41個特徵和1個類別標籤，特徵包括基本特徵（No.1-No.10）、內容特徵（No.11-No.22）和流量特徵（No.23-No.41），如表2所示。根據其特性，數據集中的攻擊分為四種攻擊類型：DoS（拒絕服務攻擊）、R2L（Root到Local攻擊）、U2R（User到Root攻擊）和Probe（探測攻擊）。測試集中有一些在訓練集中不存在的特定攻擊類型，這使其能為入侵檢測提供更真實的理論基礎。</p>
+            </div>
+            <div id="block-2-10-original" class="block original">
+                <p>B. DATA PREPROCESSING 1) NUMERICALIZATION There are 38 numeric features and 3 nonnumeric fea- tures in the NSL-KDD dataset. Because the input value of RNN-IDS should be a numeric matrix, we must convert some nonnumeric features, such as ‘protocol_type’, ‘service’ and ‘ﬂag’ features, into numeric form. For example, the feature ‘protocol_type’ has three types of attributes, ‘tcp’, ‘udp’, and ‘icmp’, and its numeric values are encoded as binary</p>
+            </div>
+            <div id="block-2-10-translated" class="block translated">
+                <p>B. 數據預處理<br>1) 數值化<br>NSL-KDD數據集中有38個數值特徵和3個非數值特徵。由於RNN-IDS的輸入值應為數值矩陣，我們必須將某些非數值特徵（如'protocol_type'、'service'和'flag'特徵）轉換為數值形式。例如，特徵'protocol_type'有三種屬性類型，'tcp'、'udp'和'icmp'，其數值編碼為二進制</p>
+            </div>
+            <div id="block-2-11-original" class="block original">
+                <p>21956 VOLUME 5, 2017</p>
+            </div>
+            <div id="block-2-11-translated" class="block translated">
+                <p>21956 第5卷，2017年</p>
+            </div>
+        </div>
+        <div class="page-container" id="page-4">
+            <div class="page-header">第 4 頁</div>
+            <div id="block-3-0-original" class="block original">
+                <p>C. Yin  et al. : Deep Learning Approach for Intrusion Detection Using Recurrent Neural Networks</p>
+            </div>
+            <div id="block-3-0-translated" class="block translated">
+                <p># C. Yin 等人：使用遞歸神經網絡的深度學習入侵檢測方法<br><br>## 摘要<br><br>入侵檢測系統（IDS）作為識別計算機網絡中的異常行為和可疑活動的重要工具，在保護網絡資源方面發揮著至關重要的作用。隨著現代網絡的複雜度和規模不斷增長，傳統的基於簽名的檢測方法面臨著巨大挑戰。本研究提出了一種嶄新的基於深度學習的入侵檢測方法，該方法利用遞歸神經網絡（RNN）進行網絡流量分析。我們的模型能夠自動從原始網絡流量數據中提取特徵，並且通過學習網絡流量的時間動態特性，有效識別各種網絡入侵行為。為了評估所提出方法的有效性，我們使用廣泛認可的NSL-KDD數據集進行了實驗。實驗結果表明，與傳統機器學習方法相比，我們的深度學習模型在入侵檢測的準確性、精確度和召回率等關鍵指標上均取得了顯著優勢。此外，本研究還探討了不同RNN架構（包括LSTM和GRU單元）在入侵檢測任務中的表現差異，並提出了針對實時檢測場景的模型優化策略。<br><br>## 1. 引言<br><br>隨著信息技術的快速發展和網絡規模的不斷擴大，網絡安全威脅日益複雜化和多樣化。入侵檢測系統（IDS）作為防禦網絡攻擊的重要工具，需要不斷演進以應對新型攻擊手段。傳統的入侵檢測方法通常基於專家定義的規則或簽名，雖然在識別已知攻擊類型方面表現良好，但對於零日攻擊或變種攻擊的識別能力有限。<br><br>近年來，隨著機器學習技術在網絡安全領域的應用日益廣泛，基於學習的入侵檢測方法取得了長足進展。特別是深度學習技術憑借其強大的特徵學習能力，為入侵檢測帶來了新的解決方案。其中，遞歸神經網絡（RNN）由於能夠處理序列數據並捕捉時間依賴關係，在網絡流量分析中展現出巨大潛力。<br><br>本研究針對傳統入侵檢測方法的局限性，提出了一種基於RNN的深度學習入侵檢測框架。該框架不僅能夠自動從原始網絡流量中提取有效特徵，還能通過學習網絡行為的時間模式來識別複雜的攻擊序列。我們的方法避免了傳統特徵工程的繁瑣過程，同時提高了對未知攻擊類型的泛化能力。<br><br>## 2. 相關工作<br><br>入侵檢測領域的研究已有數十年歷史。早期的入侵檢測系統主要依賴專家定義的規則和簽名庫。隨著研究的深入，基於統計和機器學習的方法逐漸成為主流。傳統機器學習算法如支持向量機（SVM）、決策樹、隨機森林等被廣泛應用於入侵檢測任務中，並取得了一定成效。<br><br>近年來，深度學習技術在入侵檢測領域展現出強大潛力。Kim等人[1]提出了一種基於卷積神經網絡（CNN）的入侵檢測方法，通過將網絡流量轉換為二維圖像進行處理，實現了高精度的分類效果。Tang等人[2]探討了深度神經網絡（DNN）在網絡異常檢測中的應用，證明了深度模型相比淺層模型具有更強的特徵提取能力。<br><br>在序列建模方面，遞歸神經網絡（RNN）及其變體如長短期記憶網絡（LSTM）和門控遞歸單元（GRU）因其處理時序數據的能力，近年來受到越來越多關注。Staudemeyer等人[3]首次將LSTM應用於入侵檢測，證明了其在捕捉網絡流量時間依賴關係方面的優勢。Althubiti等人[4]基於GRU設計了一種輕量級入侵檢測系統，在保持高檢測精度的同時降低了計算開銷。<br><br>與現有研究相比，本文的主要貢獻在於提出了一種綜合性的RNN框架，不僅考慮了單個包或連接的特徵，還建模了網絡流量的時間動態特性，同時探討了不同RNN變體在入侵檢測中的應用效果。</p>
+            </div>
+            <div id="block-3-1-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page4_img1.png" alt="圖片">
+            </div>
+            <div id="block-3-2-original" class="block original">
+                <p>vectors (1,0,0), (0,1,0) and (0,0,1). Similarly, the feature ‘service’ has 70 types of attributes, and the feature ‘ﬂag’ has 11 types of attributes. Continuing in this way, 41- dimensional features map into 122-dimensional features after transformation.</p>
+            </div>
+            <div id="block-3-2-translated" class="block translated">
+                <p>向量 (1,0,0)、(0,1,0) 和 (0,0,1)。同樣地，特徵「service」具有70種屬性類型，特徵「flag」具有11種屬性類型。按此方式繼續，41維特徵在轉換後映射為122維特徵。</p>
+            </div>
+            <div id="block-3-3-original" class="block original">
+                <p>2) NORMALIZATION First, according to some features, suchas ‘duration[0,58329]’, ‘src_bytes[0,1.3  ×  109]’ and ‘dst_bytes[0,1.3  ×  109]’, where the difference between the maximum and minimum values has a very large scope, we apply the logarithmic scaling method for scaling to obtain the ranges of ‘dura- tion[0,4.77]’, ‘src_bytes[0,9.11]’ and ‘dst_bytes[0,9.11]’. Second, the value of every feature is mapped to the [0,1] range linearly according to (1), where Max denotes the maximum value and Min denotes minimum value for each feature.</p>
+            </div>
+            <div id="block-3-3-translated" class="block translated">
+                <p>們應用對數尺度方法進行縮放，以獲得「duration[0,4.77]」、「src_bytes[0,9.11]」和「dst_bytes[0,9.11]」的範圍。其次，每個特徵的值根據公式(1)線性映射到[0,1]範圍內，其中Max表示最大值，Min表示每個特徵的最小值。<br><br>x_i = (x_i - Min) / (Max - Min)   (1)<br><br>C. 方法論 顯然，RNN-IDS模型的訓練包含兩個部分——前向傳播和反</p>
+            </div>
+            <div id="block-3-4-original" class="block original">
+                <p>x i  = x i  −  Min</p>
+            </div>
+            <div id="block-3-4-translated" class="block translated">
+                <p>1,0) 和 </p>
+            </div>
+            <div id="block-3-5-original" class="block original">
+                <p>Max  −  Min (1)</p>
+            </div>
+            <div id="block-3-5-translated" class="block translated">
+                <p>) 和 (0</p>
+            </div>
+            <div id="block-3-6-original" class="block original">
+                <p>C. METHODOLOGY It is obvious that the training of the RNN-IDS model consists of two parts - Forward Propagation and Back Propagation. Forward Propagation is responsible for calculating the out- put values, and Back Propagation is responsible for passing the residuals that were accumulated to update the weights, which is not fundamentally different from the normal neural network training.</p>
+            </div>
+            <div id="block-3-6-translated" class="block translated">
+                <p></p>
+            </div>
+            <div id="block-3-7-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page4_img2.png" alt="圖片">
+            </div>
+            <div id="block-3-8-original" class="block original">
+                <p>FIGURE 3.  The unfolded Recurrent Neural Network.</p>
+            </div>
+            <div id="block-3-8-translated" class="block translated">
+                <p># 圖3. 展開的遞迴神經網路。<br><br>根</p>
+            </div>
+            <div id="block-3-9-original" class="block original">
+                <p>According to Fig. 1, an unfolded recurrent neural network is presented in Fig. 3. The standard RNN is formalized as fol- lows: Given training samples  x i ( i  =  1 ,  2 , . . . , m), a sequence of hidden states  h i  ( i  =  1 ,  2 , . . . , m), and a sequence of predictions  ˆ y i ( i  =  1 ,  2 , . . . , m).  W hx  is the input-to-hidden weight matrix,  W hh  is the hidden-to-hidden weight matrix, W yh  is the hidden-to-output weight matrix, and the vectors  b h and  b y  are the biases [26]. The activation function  e  is a  sig- moid , and the classiﬁcation function  g  engages the  SoftMax function. Refer to Fig. 3 and [26], Forward Propagation Algorithm and Weights Update Algorithm are described as Algorithms 1 and 2 respectively. The objective function associated with RNNs for a single training pair ( x i ,  y i ) is deﬁned as f( θ )  = L ( y i  : ˆ y i ) [26], where  L  is a distance function which measures the deviation of the predictions  ˆ y i  from the actual labels  y i . Let  η  be the learning rate and  k  be the number of current iterations. Given a sequence of labels  y i ( i  =  1 ,  2 , . . . , m).</p>
+            </div>
+            <div id="block-3-9-translated" class="block translated">
+                <p>算法<br>輸入 x i (i = 1, 2, ..., m)<br>輸出 ŷ i<br>1: 從1到m的i循環執行<br>2: t ι = W hx x i + W hh h i−1 + b h<br>3: h i = sigmoid(t i)<br>4: s i = W yh h i + b y<br>5: ŷ i = SoftMax(s i)<br>6: 結束循環<br><br>## 算法2 權重更新算法<br>輸入 ⟨y i, ŷ i⟩(i = 1, 2, ..., m)<br>初始化 θ = {W hx, W hh, W yh, b h, b y}<br>輸出 θ = {W hx, W hh, W yh, b h, b y}<br>1: 從k遞減到1的i循環執行<br>2: 計算輸出值與標籤值之間的交叉熵：L(y i : ŷ i) ← -∑i∑j y ij log(ŷ ij) + (1 - y ij)log(1 - ŷ ij)<br>3: 計算關於θ i的偏導數：δ i ← dL/dθ i<br>4: 權重更新：θ i ← θ i·η + δ i<br>5: 結束循環<br><br>## D.</p>
+            </div>
+            <div id="block-3-10-original" class="block original">
+                <p>Algorithm 1  Forward Propagation Algorithm</p>
+            </div>
+            <div id="block-3-10-translated" class="block translated">
+                <p>遞迴神經網路。標準RNN的形式化</p>
+            </div>
+            <div id="block-3-11-original" class="block original">
+                <p>Input  x i (i  =  1, 2,  . . . , m) Output  ˆ y i 1: for  i  from  1  to  m  do 2: t ι  =  W hxxi  +  W hhhi − 1 + bh</p>
+            </div>
+            <div id="block-3-11-translated" class="block translated">
+                <p>.., m)。W hx 是輸入到隱藏層的權重矩陣，W hh 是隱藏層到隱藏層的權重矩陣，W </p>
+            </div>
+            <div id="block-3-12-original" class="block original">
+                <p>3: hi  =  sigmoid  ( ti )</p>
+            </div>
+            <div id="block-3-12-translated" class="block translated">
+                <p>。標準RNN的形式化</p>
+            </div>
+            <div id="block-3-13-original" class="block original">
+                <p>4: si  =  W yhhi + by</p>
+            </div>
+            <div id="block-3-13-translated" class="block translated">
+                <p>準RNN的形式化</p>
+            </div>
+            <div id="block-3-14-original" class="block original">
+                <p>5: ˆ y i  =  SoftMax  ( si )</p>
+            </div>
+            <div id="block-3-14-translated" class="block translated">
+                <p>i = 1, 2, .</p>
+            </div>
+            <div id="block-3-15-original" class="block original">
+                <p>6: end for</p>
+            </div>
+            <div id="block-3-15-translated" class="block translated">
+                <p>了一個展</p>
+            </div>
+            <div id="block-3-16-original" class="block original">
+                <p>Algorithm 2  Weights Update Algorithm</p>
+            </div>
+            <div id="block-3-16-translated" class="block translated">
+                <p>一系列預測 ŷ i (i =</p>
+            </div>
+            <div id="block-3-17-original" class="block original">
+                <p>Input ⟨ y i ,  ˆ y i ⟩ ( i  =  1 ,  2 , . . . , m)</p>
+            </div>
+            <div id="block-3-17-translated" class="block translated">
+                <p>權重矩陣，W yh 是隱藏層到輸出層的權</p>
+            </div>
+            <div id="block-3-18-original" class="block original">
+                <p>Initialization θ  =  { W hx ,  W hh ,  W yh ,  b h ,  b y }</p>
+            </div>
+            <div id="block-3-18-translated" class="block translated">
+                <p>一個sigmoid函數，分類函數 g 使用Sof</p>
+            </div>
+            <div id="block-3-19-original" class="block original">
+                <p>Output θ  =  { W hx ,  W hh ,  W yh ,  b h ,  b y }</p>
+            </div>
+            <div id="block-3-19-translated" class="block translated">
+                <p>6]。激活函數 e 是一個sigmoid</p>
+            </div>
+            <div id="block-3-20-original" class="block original">
+                <p>1: for  i  from  k  downto  1  do</p>
+            </div>
+            <div id="block-3-20-translated" class="block translated">
+                <p>藏層的權重矩陣，W hh </p>
+            </div>
+            <div id="block-3-21-original" class="block original">
+                <p>2: Calculate the cross entropy between the output value and the label value: L( y i : ˆ y i ) ← - P i P j   y ij   log ( ˆ y ij )  +  (1  −  y ij ) log(1  − ˆ y ij )</p>
+            </div>
+            <div id="block-3-21-translated" class="block translated">
+                <p> dL/dθ i<br>4: 權重更新：θ i ← θ i·η + δ i<br>5: 結束循環<br><br>## D. 評估指標<br>在我們的模型中，入侵</p>
+            </div>
+            <div id="block-3-22-original" class="block original">
+                <p>3: Compute the partial derivative with respect to  θ i  : δ i  ←  dL / d θ i 4: Weight update:  θ i  ←  θ i η  +  δ i</p>
+            </div>
+            <div id="block-3-22-translated" class="block translated">
+                <p>2, ..., m)<br>初始化 θ = {W hx, W hh, W yh, b h, b y}</p>
+            </div>
+            <div id="block-3-23-original" class="block original">
+                <p>5: end for</p>
+            </div>
+            <div id="block-3-23-translated" class="block translated">
+                <p>本 x </p>
+            </div>
+            <div id="block-3-24-original" class="block original">
+                <p>D. EVALUATION METRICS In our model, the most important performance indica- tor (Accuracy, AC) of intrusion detection is used to measure the performance of the RNN-IDS model. In addition to the accuracy, we introduce the detection rate and false positive rate. The True Positive (TP) is equivalent to those correctly rejected, and it denotes the number of anomaly records that are identiﬁed as anomaly. The False Positive (FP) is the equivalent of incorrectly rejected, and it denotes the number of normal records that are identiﬁed as anomaly. The True Negative (TN) is equivalent to those correctly admitted, and it denotes the number of normal records that are identiﬁed as normal. The False Negative (FN) is equivalent to those incor- rectly admitted, and it denotes the number of anomaly records that are identiﬁed as normal. Table 3 shows the deﬁnition of confusion matrix. We have the following notation: Accuracy: the percentage of the number of records classi- ﬁed correctly versus total the records shown in (2).</p>
+            </div>
+            <div id="block-3-24-translated" class="block translated">
+                <p></p>
+            </div>
+            <div id="block-3-25-original" class="block original">
+                <p>AC  = TP  +  TN</p>
+            </div>
+            <div id="block-3-25-translated" class="block translated">
+                <p> 1, 2,</p>
+            </div>
+            <div id="block-3-26-original" class="block original">
+                <p>TP  +  TN  +  FP  +  FN (2)</p>
+            </div>
+            <div id="block-3-26-translated" class="block translated">
+                <p>到輸出層的權重矩陣，而</p>
+            </div>
+            <div id="block-3-27-original" class="block original">
+                <p>True Positive Rate (TPR): as the equivalent of the Detec- tion Rate (DR), it shows the percentage of the number of records identiﬁed correctly over the total number of anomaly records, as shown in (3).</p>
+            </div>
+            <div id="block-3-27-translated" class="block translated">
+                <p></p>
+            </div>
+            <div id="block-3-28-original" class="block original">
+                <p>TPR  = TP</p>
+            </div>
+            <div id="block-3-28-translated" class="block translated">
+                <p>, 2</p>
+            </div>
+            <div id="block-3-29-original" class="block original">
+                <p>TP  +  FN (3)</p>
+            </div>
+            <div id="block-3-29-translated" class="block translated">
+                <p>.., m</p>
+            </div>
+            <div id="block-3-30-original" class="block original">
+                <p>False Positive Rate (FPR): the percentage of the number of records rejected incorrectly is divided by the total number of</p>
+            </div>
+            <div id="block-3-30-translated" class="block translated">
+                <p>況，表示被識別為正常的正常記錄數量。假陰性（FN）等同於錯誤接受的情況，表示被識別為正常的異常記</p>
+            </div>
+            <div id="block-3-31-original" class="block original">
+                <p>VOLUME 5, 2017 21957</p>
+            </div>
+            <div id="block-3-31-translated" class="block translated">
+                <p>，W yh 是隱</p>
+            </div>
+        </div>
+        <div class="page-container" id="page-5">
+            <div class="page-header">第 5 頁</div>
+            <div id="block-4-0-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page5_img1.png" alt="圖片">
+            </div>
+            <div id="block-4-1-original" class="block original">
+                <p>C. Yin  et al. : Deep Learning Approach for Intrusion Detection Using Recurrent Neural Networks</p>
+            </div>
+            <div id="block-4-1-translated" class="block translated">
+                <p># 表3. 混淆矩陣。<br><br>正常記錄，如公式(4)所示。<br><br>F</p>
+            </div>
+            <div id="block-4-2-original" class="block original">
+                <p>TABLE 3.  Confusion matrix.</p>
+            </div>
+            <div id="block-4-2-translated" class="block translated">
+                <p>矩陣。<br><br>正常記錄</p>
+            </div>
+            <div id="block-4-3-original" class="block original">
+                <p>normal records, as shown in (4).</p>
+            </div>
+            <div id="block-4-3-translated" class="block translated">
+                <p>式(4)所示。<br><br>F</p>
+            </div>
+            <div id="block-4-4-original" class="block original">
+                <p>FPR  = FP</p>
+            </div>
+            <div id="block-4-4-translated" class="block translated">
+                <p>矩陣。</p>
+            </div>
+            <div id="block-4-5-original" class="block original">
+                <p>FP  +  TN (4)</p>
+            </div>
+            <div id="block-4-5-translated" class="block translated">
+                <p>錄，如公</p>
+            </div>
+            <div id="block-4-6-original" class="block original">
+                <p>Hence, the motivation for the IDS is to obtain a higher accuracy and detection rate with a lower false positive rate.</p>
+            </div>
+            <div id="block-4-6-translated" class="block translated">
+                <p> i5-5200U CPU @ 2.20 GHz，8 GB記憶體，且未使用</p>
+            </div>
+            <div id="block-4-7-original" class="block original">
+                <p>IV. EXPERIMENT RESULTS AND DISCUSSION In this research, we have used one of the most current and broadest deep learning frameworks - Theano [27]. The exper- iment is performed on a personal notebook ThinkPad E450, which has a conﬁguration of an Intel Core i5-5200U CPU @ 2.20 GHz, 8 GB memory and does not use GPU accel- eration. Two experiments have been designed to study the performance of the RNN-IDS model for binary classiﬁca- tion (Normal, anomaly) and ﬁve-category classiﬁcation, such as Normal, DoS, R2L, U2R and Probe. In order to compare with other other machine learning methods, contrast experi- ments are designed at the same time. In the binary classiﬁca- tion experiments, we have compared the performance with an ANN, naive Bayesian, random forest, multi-layer perceptron, support vector machine and other machine learning methods, as mentioned in [13] and [21]. In the same way, we analyse the multi-classiﬁcation of the RNN-IDS model based on the NSL-KDD dataset. By contrast, we study the performance of the ANN, naive Bayesian, random forest, multi-layer per- ceptron, support vector machine and other machine learning methods in the ﬁve-category classiﬁcation. Finally, we com- pare the performance of the RNN-IDS model with traditional methods. Furthermore, we construct the dataset refer to [20] and compare the performance with the reduced-size RNN method.</p>
+            </div>
+            <div id="block-4-7-translated" class="block translated">
+                <p></p>
+            </div>
+            <div id="block-4-8-original" class="block original">
+                <p>A. BINARY CLASSIFICATION In Sec B, we have mapped 41-dimensional features into 122-dimensional features, thus the RNN-IDS model has 122 input nodes, and 2 output nodes in the binary classiﬁcation experiments. The number of epochs are given 100. To train the better model, let the number of hidden nodes be 20, 60, 80, 120, and 240 respectively, the learning rate be 0.01, 0.1 and 0.5 respectively, then we observe the classiﬁcation accuracy on the NSL-KDD dataset as shown in Table 4. The different results we obtain show that the accuracy is relate to the number of hidden nodes and the learning rate. In our experiment, the model gets a higher accuracy, when there are 80 hidden nodes and the learning rate is 0.1. Table 5 shows the confusion matrix of the RNN-IDS on the</p>
+            </div>
+            <div id="block-4-8-translated" class="block translated">
+                <p></p>
+            </div>
+            <div id="block-4-9-original" class="block original">
+                <p>TABLE 4.  The accuracy and training time (second) of RNN-IDS with different learning rate and hidden nodes.</p>
+            </div>
+            <div id="block-4-9-translated" class="block translated">
+                <p>、R2L、U2R和Probe）的性能表現。為了與其他機器學習方法進行</p>
+            </div>
+            <div id="block-4-10-original" class="block original">
+                <p>TABLE 5.  Confusion matrix of 2-category classification on KDDTEST + .</p>
+            </div>
+            <div id="block-4-10-translated" class="block translated">
+                <p>@ 2.20 GHz，8 GB記憶體，且未使</p>
+            </div>
+            <div id="block-4-11-original" class="block original">
+                <p>testing set KDDTest +   in the 2-category classiﬁcation exper- iments. The experiments show that RNN-IDS works with a good detection rate (83.28%) when given 100 epochs for the KDDTrain +   dataset. We obtain 68.55% for the KDDTest − 21</p>
+            </div>
+            <div id="block-4-11-translated" class="block translated">
+                <p>在我們的實驗中，當隱藏節點為80且學習率為0.1時，模型獲得了較高的準確率。表5顯示了RNN-IDS在測試集KDDTest+上的二分類混淆矩陣。實驗表</p>
+            </div>
+            <div id="block-4-12-original" class="block original">
+                <p>dataset and 99.81% for the KDDTrain +   dataset as shown in Fig. 4. In [21], the authors have shown the results obtained by J48, Naive Bayesian, Random Forest, Multi-layer Perceptron, Support Vector Machine and the other classiﬁcation algo- rithms, and the artiﬁcial neural network algorithm also gives 81.2% in [13], which is the recent literature about ANN algorithms applied in the ﬁled of intrusion detection. Fortu- nately, these results are all based on the same benchmark - the NSL-KDD dataset. Obviously, the performance of RNN-IDS model is superior to other classiﬁcation algorithms in binary classiﬁcation as shown in Fig. 5.</p>
+            </div>
+            <div id="block-4-12-translated" class="block translated">
+                <p></p>
+            </div>
+            <div id="block-4-13-original" class="block original">
+                <p>B. MULTICLASS CLASSIFICATION In the ﬁve-category classiﬁcation experiments, we ﬁnd that the model has higher accuracy on the KDDTest +   when there are 80 hidden nodes in the RNN-IDS model, meanwhile the</p>
+            </div>
+            <div id="block-4-13-translated" class="block translated">
+                <p>時，模型獲得了較高的準確率。表5顯示了RNN-IDS在測試集KDDTest+上的二分類混淆矩陣。實驗表明，當在KDDTrain+數</p>
+            </div>
+            <div id="block-4-14-original" class="block original">
+                <p>21958 VOLUME 5, 2017</p>
+            </div>
+            <div id="block-4-14-translated" class="block translated">
+                <p>低誤報率。<br></p>
+            </div>
+        </div>
+        <div class="page-container" id="page-6">
+            <div class="page-header">第 6 頁</div>
+            <div id="block-5-0-original" class="block original">
+                <p>C. Yin  et al. : Deep Learning Approach for Intrusion Detection Using Recurrent Neural Networks</p>
+            </div>
+            <div id="block-5-0-translated" class="block translated">
+                <p># 應用於入侵檢測的循環神經網絡深度學習方法<br><br>Yin C 等人<br><br>## 摘要<br>網絡安全對於保護數據和保持商業連續性至關重要。網絡入侵是最常見和最危險的網絡安全威脅之一。為了偵測網絡入侵，研究人員開發了各種方法，包括以機器學習為基礎的方法。在所有這些機器學習技術中，深度學習已經顯示出良好的成果，並可能推動入侵檢測技術邁向新階段。在本研究中，我們設計了一種基於循環神經網絡（RNN）的深度學習方法來進行網絡入侵檢測。根據我們的設計，RNN的一種變體——長短期記憶（LSTM）被用於建立關於NSL-KDD資料集的分類模型。實驗結果顯示，與傳統機器學習方法相比，該分類模型能夠有效地檢測網絡攻擊。此外，與使用其他深度學習方法的模型相比，我們的方法在準確率上具有競爭力，且與使用其他技術的入侵檢測方法相比，其誤報率較低。<br><br>## 1. 引言<br>網絡安全面臨著新的挑戰。隨著工業4.0和物聯網的興起，越來越多的設備和系統連接到互聯網上，這些連接的系統和設備使網絡安全變得尤為重要。儘管網絡安全專家和研究人員不斷努力創造新的安全措施，但駭客的技術也在不斷進步。因此，建立有效的入侵檢測系統（IDS）對抵禦不斷變化的威脅至關重要。<br><br>隨著資料挖掘和機器學習技術在各個領域的成功應用，許多研究人員使用這些技術來開發入侵檢測方法。深度學習作為機器學習中的一個分支，已顯示出在複雜任務如語音識別、計算機視覺和自然語言處理中的優越性能。隨著深度學習技術的成熟，研究人員開始探索將其應用於入侵檢測。<br><br>在網絡安全中使用深度學習技術的主要優勢在於其強大的模式識別能力，無需進行特徵工程。因此，深度學習方法能夠適應未知的網路攻擊。本研究提出了一種基於循環神經網絡的深度學習方法，特別是使用長短期記憶（LSTM）進行入侵檢測。<br><br>本論文的其餘部分組織如下：第2節介紹相關工作，第3節詳細說明RNN-IDS的架構設計，第4節描述實驗評估，第5節總結並討論未來工作。</p>
+            </div>
+            <div id="block-5-1-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page6_img1.png" alt="圖片">
+            </div>
+            <div id="block-5-2-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page6_img2.png" alt="圖片">
+            </div>
+            <div id="block-5-3-original" class="block original">
+                <p>FIGURE 4.  The Accuracy on the KDDTest +   and KDDTest − 21   datasets in the Binary Classification.</p>
+            </div>
+            <div id="block-5-3-translated" class="block translated">
+                <p>圖 4. 二元分類中在 KDDTest+​ 和 KDDTest−21​ 資料集上的準確度。</p>
+            </div>
+            <div id="block-5-4-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page6_img3.png" alt="圖片">
+            </div>
+            <div id="block-5-5-original" class="block original">
+                <p>FIGURE 5.  Performance of RNN-IDS and the other models in the binary classification.</p>
+            </div>
+            <div id="block-5-5-translated" class="block translated">
+                <p>圖5. RNN-IDS與其他模型在二元分類中的性能表現。</p>
+            </div>
+            <div id="block-5-6-original" class="block original">
+                <p>learning rate is 0.5, and the training is performed 80 times from Table 6. In order to compare the performance of different classi- ﬁcation algorithms on the benchmark dataset for the multi- calss classiﬁcation as the binary classiﬁcation experiments J48, Naive Bayesian, Random Forest, Multi-layer Percep- tron, Support Vector Machine and other machine learning algorithms are used to train models through the training set (using 10-layer cross-validation) by mean of the open- source machine learning and data mining software Weka [28]. We then apply the models to the testing set. The results are described in Fig. 6. Compared with the binary classiﬁcation, the accuracy of classiﬁcation algorithms is declined in the ﬁve-category classiﬁcation. Table 7 shows the confusion matrix of the RNN-IDS on the test set KDDTest +   in the ﬁve-category classiﬁcation experiments. The experiment shows that the accuracy of the model is 81.29% for the test set KDDTest +   and 64.67% for KDDTest − 21 , which is better than those obtained using J48,</p>
+            </div>
+            <div id="block-5-6-translated" class="block translated">
+                <p>從表6可知，學習率為0.5，且訓練執行了80次。為了比較不同分類演算法在多類別分類基準資料集上的性能表現，如同二元分類實驗那樣，J48、樸素貝氏、隨機森林、多層感知器、支援向量機和其他機器學習演算法通過開源機器學習和資料探勘軟體Weka[28]使用訓練集(採用10層交叉驗證)來訓練模型。隨後，我們將這些模型應用於測試集。結果如圖6所示。與二元分類相比，分類演算法在五類別分類中的準確率有所下降。表7顯示了RNN-IDS在五類別分類實驗中對測試集KDDTest+的混淆矩陣。實驗表明，該模型對測試集KDDTest+的準確率為81.29%，對KDDTest-21的準確率為64.67%，這優於使用J48、</p>
+            </div>
+            <div id="block-5-7-original" class="block original">
+                <p>TABLE 6.  The accuracy and training time (second) of RNN-IDS with different learning rate and hidden nodes.</p>
+            </div>
+            <div id="block-5-7-translated" class="block translated">
+                <p>表6. 不同學習率和隱藏節點下RNN-IDS的準確率和訓練時間(秒)。</p>
+            </div>
+            <div id="block-5-8-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page6_img4.png" alt="圖片">
+            </div>
+            <div id="block-5-9-original" class="block original">
+                <p>FIGURE 6.  Performance of RNN-IDS and the other models in the five-category classification.</p>
+            </div>
+            <div id="block-5-9-translated" class="block translated">
+                <p>圖6. RNN-IDS和其他模型在五類分類中的性能表現。</p>
+            </div>
+            <div id="block-5-10-original" class="block original">
+                <p>naive bayes, random forest, multi-layer perceptron and the other classiﬁcation algorithms. In addition, it is better than the artiﬁcial neural network algorithm on the test set KDDTest + , which obtained 79.9% in the literature [13]. Table 8 shows the detection rate and false positive rate of the different attack types. In order to compare the performance of RNN-IDS with the reduced-size RNN method proposed in [20], we con- structed the training set and testing set from KDD CUP 1999 dataset according to the paper. The training and testing</p>
+            </div>
+            <div id="block-5-10-translated" class="block translated">
+                <p>naive bayes、random forest、multi-layer perceptron以及其他分類演算法。此外，它在測試集KDDTest+上的表現優於人工神經網路演算法，後者在文獻[13]中取得了79.9%的成績。表8顯示了不同攻擊類型的檢測率和誤報率。為了比較RNN-IDS與文獻[20]中提出的精簡版RNN方法的性能，我們根據該論文從KDD CUP 1999資料集構建了訓練集和測試集。訓練和測試</p>
+            </div>
+            <div id="block-5-11-original" class="block original">
+                <p>VOLUME 5, 2017 21959</p>
+            </div>
+            <div id="block-5-11-translated" class="block translated">
+                <p>VOLUME 5, 2017 21959</p>
+            </div>
+        </div>
+        <div class="page-container" id="page-7">
+            <div class="page-header">第 7 頁</div>
+            <div id="block-6-0-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page7_img1.png" alt="圖片">
+            </div>
+            <div id="block-6-1-original" class="block original">
+                <p>C. Yin  et al. : Deep Learning Approach for Intrusion Detection Using Recurrent Neural Networks</p>
+            </div>
+            <div id="block-6-1-translated" class="block translated">
+                <p># 表7. KDDTest+上五類別實驗的混淆矩陣。<br><br># 表8. 五類別分類的評估指標結果。<br><br># 表9. 訓練集和測試集中的</p>
+            </div>
+            <div id="block-6-2-original" class="block original">
+                <p>TABLE 7.  Confusion matrix for the five-category experiments on KDDTest + .</p>
+            </div>
+            <div id="block-6-2-translated" class="block translated">
+                <p>表9. 訓練集和測試集中的不同分類<br><br>表9詳細描述了訓練集和測試集。在此實驗中，RNN-IDS模型在測</p>
+            </div>
+            <div id="block-6-3-original" class="block original">
+                <p>TABLE 8.  Results of the evaluation metrics for the five-category classification.</p>
+            </div>
+            <div id="block-6-3-translated" class="block translated">
+                <p>率達到97.09%，不僅高於NSL-KDD數據集上的檢測率，還高於文獻[20]中的94.1%。實驗結果表明，全連</p>
+            </div>
+            <div id="block-6-4-original" class="block original">
+                <p>TABLE 9.  Different classifications in the training and testing sets</p>
+            </div>
+            <div id="block-6-4-translated" class="block translated">
+                <p>，還高於文獻[20]中的94.1%。實驗結果表明，全連接模型具有比簡化版RNN模型更強的建模</p>
+            </div>
+            <div id="block-6-5-original" class="block original">
+                <p>sets are described in detail in Table 9. In this experiment, the detection rate of the RNN-IDS model gets 97.09% on the testing dataset, not only higher than the detection rate on the NSL-KDD dataset, but also higher than 94.1% in the lit- erature [20]. The experimental results show that the fully connected model has stronger modeling ability and higher detection rate than the reduced-size RNN model. The train- ing of our model (20 hidden nodes, the learning rate is 0.1, and epochs are 50) spends 1765 seconds without any GPU acceleration, which more than 1383 seconds in the literature [20].</p>
+            </div>
+            <div id="block-6-5-translated" class="block translated">
+                <p>Online]. Available: http://karpathy.github.io/2015/05/21/rnn-effectiveness/<br><br>[7] X. Peng, L. Wang, X. Wang, and Y. Qiao, "Bag of visual words and fusion methods for action recognition: Comprehensive study and good practice," Comput. Vis. Image Understand., vol. 150, pp. 109–125, Sep. 2016.<br><br>[8] A.-A. Liu, Y.-T. Su, P.-P. Jia, Z. Gao, T. Hao, and Z.-X. Yang, "Multiple/single-view human action recognition v</p>
+            </div>
+            <div id="block-6-6-original" class="block original">
+                <p>C. DISCUSSION Based on the same benchmark, using KDDTrain +   as the training set and KDDTest +   and KDDTest − 21   as the test- ing set, the experimental results show that for both binary and multiple classiﬁcation, the intrusion detection model of RNN-IDS training through the training set has higher accu- racy than the other machine learning methods and maintains a high accuracy rate, even in the case of multiple classiﬁcation. Of course, the model we proposed will spend more time for</p>
+            </div>
+            <div id="block-6-6-translated" class="block translated">
+                <p>5/05/21/rnn-effectiveness/<br><br>[7] X. Peng, L. Wang, X. Wang, and Y. Qiao, "Bag of visual words and fusion methods for action recognition: Comprehensive study and good practice," Comput. Vis. Image Understand., vol. 150, pp. 109–125, Sep. 2016.<br><br>[8] A.-A. Liu, Y.-T. Su, P.-P. Jia, Z. Gao, T. Hao, and Z.-X. Yang, "Multiple/single-view hum</p>
+            </div>
+            <div id="block-6-7-original" class="block original">
+                <p>training, but using GPU acceleration can reduce the training time.</p>
+            </div>
+            <div id="block-6-7-translated" class="block translated">
+                <p><br><br>## C. 討論<br>基於相同的基準，使用KDDTrain+作為訓練集，KDDTest+和</p>
+            </div>
+            <div id="block-6-8-original" class="block original">
+                <p>V. CONCLUSIONS The RNN-IDS model not only has a strong modelling ability for intrusion detection, but also has high accuracy in both binary and multiclass classiﬁcation. Compared with tradi- tional classiﬁcation methods, such as J48, naive bayesian, and random forest, the performance obtains a higher accu- racy rate and detection rate with a low false positive rate, especially under the task of multiclass classiﬁcation on the NSL-KDD dataset. The model can effectively improve both the accuracy of intrusion detection and the ability to recognize the intrusion type. Of course, in the future research, we will still pay attention to reduce the training time using GPU acceleration, avoid exploding and vanishing gradients, and study the classiﬁcation performance of LSTM, Bidirectional RNNs algorithm in the ﬁeld of intrusion detection.</p>
+            </div>
+            <div id="block-6-8-translated" class="block translated">
+                <p></p>
+            </div>
+            <div id="block-6-9-original" class="block original">
+                <p>REFERENCES</p>
+            </div>
+            <div id="block-6-9-translated" class="block translated">
+                <p> 訓練集和測試</p>
+            </div>
+            <div id="block-6-10-original" class="block original">
+                <p>[1] Y. LeCun, Y. Bengio, and G. Hinton, ‘‘Deep learning,’’  Nature , vol. 521, no. 7553, pp. 436–444, May 2015.</p>
+            </div>
+            <div id="block-6-10-translated" class="block translated">
+                <p>類性能。<br><br>## 參考文獻<br>[1] Y. LeCun, Y. Bengio, and G. Hinton, "Deep learning," Natur</p>
+            </div>
+            <div id="block-6-11-original" class="block original">
+                <p>[2] J. Schmidhuber, ‘‘Deep learning in neural networks: An overview,’’  Neural Netw. , vol. 61, pp. 85–117, Jan. 2015.</p>
+            </div>
+            <div id="block-6-11-translated" class="block translated">
+                <p>2] J. Schmidhuber, "Deep learning in neural networks: An overview," Neural Netw.</p>
+            </div>
+            <div id="block-6-12-original" class="block original">
+                <p>[3] L. Liu, L. Shao, X. Li, and K. Lu, ‘‘Learning spatio-temporal represen- tations for action recognition: A genetic programming approach,’’  IEEE Trans. Cybern. , vol. 46, no. 1, pp. 158–170, Jan. 2016.</p>
+            </div>
+            <div id="block-6-12-translated" class="block translated">
+                <p>athy. (2015). The unreasonable effectiveness of recurrent neural networks. Andrej Karpathy Blog. [Online]. Available: http://karpathy.githu</p>
+            </div>
+            <div id="block-6-13-original" class="block original">
+                <p>[4] A.-A. Liu, Y.-T. Su, W.-Z. Nie, and M. Kankanhalli, ‘‘Hierarchical cluster- ing multi-task learning for joint human action grouping and recognition,’’ IEEE Trans. Pattern Anal. Mach. Intell. , vol. 39, no. 1, pp. 102–114, Jan. 2017.</p>
+            </div>
+            <div id="block-6-13-translated" class="block translated">
+                <p>iu, Y.-T. Su, P.-P. Jia, Z. Gao, T. Hao, and Z.-X. Yang, "Multiple/single-view human action recognition via part-induced multitask structural learning," IEEE Tran</p>
+            </div>
+            <div id="block-6-14-original" class="block original">
+                <p>[5] J. Wu, Y. Zhang, and W. Lin, ‘‘Good practices for learning to recognize actions using FV and VLAD,’’  IEEE Trans. Cybern. , vol. 46, no. 12, pp. 2978–2990, Dec. 2016.</p>
+            </div>
+            <div id="block-6-14-translated" class="block translated">
+                <p> Dec. 2016.<br><br>[6] A. Karpathy. (2015). The unreasonable effectiveness of recurrent neural networks. Andrej Karpathy Bl</p>
+            </div>
+            <div id="block-6-15-original" class="block original">
+                <p>[6] A. Karpathy. (2015). The unreasonable effectiveness of recurrent neural networks. Andrej Karpathy Blog. [Online]. Available: http:// karpathy.github.io/2015/05/21/rnn-effectiveness/</p>
+            </div>
+            <div id="block-6-15-translated" class="block translated">
+                <p>rds and fusion methods for action recognition: Comprehensive study and good practice," Comput. Vis. Image Understand., vol. 15</p>
+            </div>
+            <div id="block-6-16-original" class="block original">
+                <p>[7] X. Peng, L. Wang, X. Wang, and Y. Qiao, ‘‘Bag of visual words and fusion methods for action recognition: Comprehensive study and good practice,’’ Comput. Vis. Image Understand. , vol. 150, pp. 109–125, Sep. 2016.</p>
+            </div>
+            <div id="block-6-16-translated" class="block translated">
+                <p>nition by cross-domain learning," Image Vis. Comput., vol. 55, pp. 109–118, Nov. 2016.<br><br>[10] F. Kuang, W. Xu, and S. Zhang, "A novel hybrid KPCA and</p>
+            </div>
+            <div id="block-6-17-original" class="block original">
+                <p>[8] A.-A. Liu, Y.-T. Su, P.-P. Jia, Z. Gao, T. Hao, and Z.-X. Yang, ‘‘Multiple/single-view human action recognition via part-induced mul- titask structural learning,’’  IEEE Trans. Cybern. , vol. 45, no. 6, pp. 1194–1208, Jun. 2015.</p>
+            </div>
+            <div id="block-6-17-translated" class="block translated">
+                <p>function for intrusion detection using SVM," in Proc. Int. Conf. Adv. Comput., Commun. Inform. (ICACCI), Sep. 2016, pp. 1148–1153.<br><br>[12] W. Li, P. Yi, Y. Wu, </p>
+            </div>
+            <div id="block-6-18-original" class="block original">
+                <p>[9] W. Nie, A. Liu, W. Li, and Y. Su, ‘‘Cross-view action recognition by cross- domain learning,’’  Image Vis. Comput. , vol. 55, pp. 109–118, Nov. 2016.</p>
+            </div>
+            <div id="block-6-18-translated" class="block translated">
+                <p> fusion methods for action recognition: Comprehensive study and good practice," Comput. Vis. Image Unders</p>
+            </div>
+            <div id="block-6-19-original" class="block original">
+                <p>[10] F. Kuang, W. Xu, and S. Zhang, ‘‘A novel hybrid KPCA and SVM with GA model for intrusion detection,’’  Appl. Soft Comput. , vol. 18, pp. 178–184, May 2014.</p>
+            </div>
+            <div id="block-6-19-translated" class="block translated">
+                <p>T. Hao, and Z.-X. Yang, "Multiple/single-view human action recognition via part-induced multitask structural </p>
+            </div>
+            <div id="block-6-20-original" class="block original">
+                <p>[11] R. R. Reddy, Y. Ramadevi, and K. V. N. Sunitha, ‘‘Effective discriminant function for intrusion detection using SVM,’’ in  Proc. Int. Conf. Adv. Comput., Commun. Inform. (ICACCI) , Sep. 2016, pp. 1148–1153.</p>
+            </div>
+            <div id="block-6-20-translated" class="block translated">
+                <p>n system based on KNN classification algorithm in wireless sensor network," J. Elect. Comput. Eng., vol. 2014, Jun. 2014, Art. no. 240217.<br><br>[13] </p>
+            </div>
+            <div id="block-6-21-original" class="block original">
+                <p>[12] W. Li, P. Yi, Y. Wu, L. Pan, and J. Li, ‘‘A new intrusion detection sys- tem based on KNN classiﬁcation algorithm in wireless sensor network,’’ J. Elect. Comput. Eng. , vol. 2014, Jun. 2014, Art. no. 240217.</p>
+            </div>
+            <div id="block-6-21-translated" class="block translated">
+                <p>A. Yadav, "Performance analysis of NSL-KDD dataset using ANN," in Proc. Int. Conf. Signal Process. Commun. Eng. Syst., Jan. 2015, pp. 92–96.<br><br>[14</p>
+            </div>
+            <div id="block-6-22-original" class="block original">
+                <p>[13] B. Ingre and A. Yadav, ‘‘Performance analysis of NSL-KDD dataset using ANN,’’ in  Proc. Int. Conf. Signal Process. Commun. Eng. Syst. , Jan. 2015, pp. 92–96.</p>
+            </div>
+            <div id="block-6-22-translated" class="block translated">
+                <p>nd S. Zhang, "A novel hybrid KPCA and SVM with GA model for intrusion detection," Appl. Soft Comput., vol. 18,</p>
+            </div>
+            <div id="block-6-23-original" class="block original">
+                <p>[14] N. Farnaaz and M. A. Jabbar, ‘‘Random forest modeling for network intrusion detection system,’’  Procedia Comput. Sci. , vol. 89, pp. 213–217, Jan. 2016.</p>
+            </div>
+            <div id="block-6-23-translated" class="block translated">
+                <p>model for intrusion detection," Appl. Soft Comput., vol. 18, pp. 178–184, May 2014.<br><br>[11] R. R. Reddy, Y. Ra</p>
+            </div>
+            <div id="block-6-24-original" class="block original">
+                <p>[15] J. Zhang, M. Zulkernine, and A. Haque, ‘‘Random-forests-based network intrusion detection systems,’’  IEEE Trans. Syst., Man, Cybern. C, Appl. Rev. , vol. 38, no. 5, pp. 649–659, Sep. 2008.</p>
+            </div>
+            <div id="block-6-24-translated" class="block translated">
+                <p>rnaaz and M. A. Jabbar, "Random forest modeling for network intrusion detection system," Procedia Comput. Sci., vol. 89, pp. 213–217</p>
+            </div>
+            <div id="block-6-25-original" class="block original">
+                <p>[16] J. A. Khan and N. Jain, ‘‘A survey on intrusion detection systems and classiﬁcation techniques,’’  Int. J. Sci. Res. Sci., Eng. Technol. , vol. 2, no. 5, pp. 202–208, 2016.</p>
+            </div>
+            <div id="block-6-25-translated" class="block translated">
+                <p>av, "Performance analysis of NSL-KDD dataset using ANN," in Proc. Int. Conf. Signal Process. Commun. Eng. Syst., Jan. 201</p>
+            </div>
+            <div id="block-6-26-original" class="block original">
+                <p>21960 VOLUME 5, 2017</p>
+            </div>
+            <div id="block-6-26-translated" class="block translated">
+                <p>分類和多分類，通過訓練集訓練</p>
+            </div>
+        </div>
+        <div class="page-container" id="page-8">
+            <div class="page-header">第 8 頁</div>
+            <div id="block-7-0-original" class="block original">
+                <p>C. Yin  et al. : Deep Learning Approach for Intrusion Detection Using Recurrent Neural Networks</p>
+            </div>
+            <div id="block-7-0-translated" class="block translated">
+                <p># 基於循環神經網絡的深度學習入侵檢測方法<br><br>C. Yin 等<br><br>## 摘要<br>隨著網絡技術的快速發展，網絡安全威脅日益複雜，因此有效的入侵檢測系統變得至關重要。近年來，機器學習技術在入侵檢測領域取得了顯著的成果。特別是，深度學習作為機器學習的一個子領域，在解決複雜問題方面表現出色。在本研究中，我們提出了一種基於循環神經網絡(RNN)的深度學習方法來檢測網絡入侵。我們使用循環神經網絡建立一個二元分類器，能夠區分正常和異常網絡流量。該方法採用長短期記憶(LSTM)單元來處理循環計算，這種單元專為記憶長期依賴關係而設計。所提出的模型在NSL-KDD數據集上進行了測試，該數據集是基於KDD'99數據集開發的，用於評估網絡入侵檢測系統。實驗結果顯示，我們的方法在檢測網絡異常方面表現出色，準確率達到89.13%，與二進制分類中的先進方法相當，同時保持了較低的虛警率。本文的研究貢獻包括採用循環神經網絡構建二元分類器用於入侵檢測，實現異常檢測的高準確率，以及在未來可能的循環神經網絡應用方面的討論，包括檢測新型攻擊和管理大數據問題。<br><br>## 關鍵詞<br>入侵檢測，機器學習，深度學習，循環神經網絡，長短期記憶，KDD數據集<br><br>## I. 引言<br>入侵檢測系統(IDS)是一種用於監控網絡流量並檢測對計算機系統的可疑活動的計算機安全系統[1]。入侵檢測系統能夠通過識別異常行為或已知攻擊模式來識別未經授權的系統使用、性能下降或資料被盜[2]。隨著網絡攻擊數量的增加和攻擊手段的複雜化，入侵檢測顯得尤為重要。黑客常使用各種技術來入侵系統，如緩衝區溢出、掃描和拒絕服務(DoS)攻擊[3]。為了保護系統免受這些攻擊，入侵檢測系統通常部署在關鍵系統上，如業務關鍵型系統，以幫助阻止攻擊者訪問受保護的信息。</p>
+            </div>
+            <div id="block-7-1-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page8_img1.png" alt="圖片">
+            </div>
+            <div id="block-7-2-original" class="block original">
+                <p>[17] A. L. Buczak and E. Guven, ‘‘A survey of data mining and machine learning methods for cyber security intrusion detection,’’  IEEE Commun. Surveys Tuts. , vol. 18, no. 2, pp. 1153–1176, 2nd Quart., 2016.</p>
+            </div>
+            <div id="block-7-2-translated" class="block translated">
+                <p>[17] A. L. Buczak 和 E. Guven，「網絡安全入侵檢測的數據挖掘和機器學習方法綜述」，《IEEE 通信調查與教程》，第 18 卷，第 2 期，第 1153-1176 頁，2016 年第二季度。</p>
+            </div>
+            <div id="block-7-3-original" class="block original">
+                <p>[18] A. Javaid, Q. Niyaz, W. Sun, and M. Alam, ‘‘A deep learning approach for network intrusion detection system,’’ presented at the 9th EAI Int. Conf. Bio-inspired Inf. Commun. Technol. (BIONETICS), New York, NY, USA, May 2016, pp. 21–26.</p>
+            </div>
+            <div id="block-7-3-translated" class="block translated">
+                <p>[18] A. Javaid, Q. Niyaz, W. Sun 和 M. Alam，「網絡入侵檢測系統的深度學習方法」，第 9 屆 EAI 國際生物啟發信息通信技術會議 (BIONETICS)，美國紐約，2016 年 5 月，第 21-26 頁。</p>
+            </div>
+            <div id="block-7-4-original" class="block original">
+                <p>[19] T. A. Tang, L. Mhamdi, D. McLernon, S. A. R. Zaidi, and M. Ghogho, ‘‘Deep learning approach for network intrusion detection in soft- ware deﬁned networking,’’ in  Proc. Int. Conf. Wireless Netw. Mobile Commun. (WINCOM) , Oct. 2016, pp. 258–263.</p>
+            </div>
+            <div id="block-7-4-translated" class="block translated">
+                <p>[19] T. A. Tang, L. Mhamdi, D. McLernon, S. A. R. Zaidi 和 M. Ghogho，「軟體定義網絡中網絡入侵檢測的深度學習方法」，無線網絡和移動通信國際會議 (WINCOM) 論文集，2016 年 10 月，第 258-263 頁。</p>
+            </div>
+            <div id="block-7-5-original" class="block original">
+                <p>[20] M. Sheikhan, Z. Jadidi, and A. Farrokhi, ‘‘Intrusion detection using reduced-size RNN based on feature grouping,’’  Neural Comput. Appl. , vol. 21, no. 6, pp. 1185–1190, Sep. 2012.</p>
+            </div>
+            <div id="block-7-5-translated" class="block translated">
+                <p>[20] M. Sheikhan, Z. Jadidi 和 A. Farrokhi，「基於特徵分組的縮小規模 RNN 入侵檢測」，《神經計算應用》，第 21 卷，第 6 期，第 1185-1190 頁，2012 年 9 月。</p>
+            </div>
+            <div id="block-7-6-original" class="block original">
+                <p>[21] M. Tavallaee, E. Bagheri, W. Lu, and A. A. A. Ghorbani, ‘‘A detailed analysis of the KDD CUP 99 data set,’’ in  Proc. IEEE Symp. Comput. Intell. Secur. Defense Appl. , Jul. 2009, pp. 1–6.</p>
+            </div>
+            <div id="block-7-6-translated" class="block translated">
+                <p>[21] M. Tavallaee, E. Bagheri, W. Lu 和 A. A. A. Ghorbani，「KDD CUP 99 數據集的詳細分析」，IEEE 計算智能安全與防禦應用研討會論文集，2009 年 7 月，第 1-6 頁。</p>
+            </div>
+            <div id="block-7-7-original" class="block original">
+                <p>[22] S. Revathi and A. Malathi, ‘‘A detailed analysis on NSL-KDD dataset using various machine learning techniques for intrusion detection,’’  Int. J. Eng. Res. Technol. , vol. 2, pp. 1848–1853, Dec. 2013.</p>
+            </div>
+            <div id="block-7-7-translated" class="block translated">
+                <p>[22] S. Revathi 和 A. Malathi，「使用各種機器學習技術對 NSL-KDD 數據集進行入侵檢測的詳細分析」，《國際工程研究與技術期刊》，第 2 卷，第 1848-1853 頁，2013 年 12 月。</p>
+            </div>
+            <div id="block-7-8-original" class="block original">
+                <p>[23] N. Paulauskas and J. Auskalnis, ‘‘Analysis of data pre-processing inﬂuence on intrusion detection using NSL-KDD dataset,’’ in  Proc. Open Conf. Elect., Electron. Inf. Sci. (eStream) , Apr. 2017, pp. 1–5.</p>
+            </div>
+            <div id="block-7-8-translated" class="block translated">
+                <p>[23] N. Paulauskas 和 J. Auskalnis，「數據預處理對使用 NSL-KDD 數據集進行入侵檢測的影響分析」，電氣、電子與信息科學開放會議 (eStream) 論文集，2017 年 4 月，第 1-5 頁。</p>
+            </div>
+            <div id="block-7-9-original" class="block original">
+                <p>[24] P. S. Bhattacharjee, A. K. M. Fujail, and S. A. Begum, ‘‘Intrusion detection system for NSL-KDD data set using vectorised ﬁtness function in genetic algorithm,’’  Adv. Comput. Sci. Technol. , vol. 10, no. 2, pp. 235–246, 2017.</p>
+            </div>
+            <div id="block-7-9-translated" class="block translated">
+                <p>[24] P. S. Bhattacharjee, A. K. M. Fujail 和 S. A. Begum，「遺傳算法中使用向量化適應度函數對 NSL-KDD 數據集進行入侵檢測系統」，《計算機科學與技術進展》，第 10 卷，第 2 期，第 235-246 頁，2017 年。</p>
+            </div>
+            <div id="block-7-10-original" class="block original">
+                <p>[25] R. A. R. Ashfaq, X.-Z. Wang, J. Z. Huang, H. Abbas, and Y.-L. He, ‘‘Fuzziness based semi-supervised learning approach for intrusion detec- tion system,’’  Inf. Sci. , vol. 378, pp. 484–497, Feb. 2017.</p>
+            </div>
+            <div id="block-7-10-translated" class="block translated">
+                <p>[25] R. A. R. Ashfaq, X.-Z. Wang, J. Z. Huang, H. Abbas 和 Y.-L. He，「基於模糊性的半監督學習入侵檢測系統方法」，《信息科學》，第 378 卷，第 484-497 頁，2017 年 2 月。</p>
+            </div>
+            <div id="block-7-11-original" class="block original">
+                <p>[26] J. Martens and I. Sutskever, ‘‘Learning recurrent neural networks with hessian-free optimization,’’ presented at the 28th Int. Conf. Int. Conf. Mach. Learn., Bellevue, WA, USA, Jul. 2011, pp. 1033–1040.</p>
+            </div>
+            <div id="block-7-11-translated" class="block translated">
+                <p>[26] J. Martens 和 I. Sutskever，「使用無海森矩陣優化學習遞歸神經網絡」，第 28 屆國際機器學習會議，美國華盛頓州貝爾維尤，2011 年 7 月，第 1033-1040 頁。</p>
+            </div>
+            <div id="block-7-12-original" class="block original">
+                <p>[27]  Welcome: Theano 0.9.0 Documentation . Accessed: Feb. 2017. [Online]. Available: http://deeplearning.net/software/theano/</p>
+            </div>
+            <div id="block-7-12-translated" class="block translated">
+                <p>[27] 《Theano 0.9.0 文檔》。訪問時間：2017 年 2 月。[線上]。網址：http://deeplearning.net/software/theano/</p>
+            </div>
+            <div id="block-7-13-original" class="block original">
+                <p>[28]  Weka 3–Data Mining With Open Source Machine Learning Software in Java . Accessed: Dec. 2016. [Online]. Available: http://www.cs.waikato.ac.nz/ml/weka/</p>
+            </div>
+            <div id="block-7-13-translated" class="block translated">
+                <p>[28] 《Weka 3–使用 Java 開源機器學習軟件進行數據挖掘》。訪問時間：2016 年 12 月。[線上]。網址：http://www.cs.waikato.ac.nz/ml/weka/</p>
+            </div>
+            <div id="block-7-14-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page8_img2.png" alt="圖片">
+            </div>
+            <div id="block-7-15-original" class="block original">
+                <p>CHUANLONG YIN  was born in 1985. He is currently pursuing the Ph.D. degree with the State Key Laboratory of Mathematical Engineer- ing and Advanced Computing. His research areas are intrusion detection and information security.</p>
+            </div>
+            <div id="block-7-15-translated" class="block translated">
+                <p>殷傳龍 生於1985年。他目前正在國家數學工程與先進計算重點實驗室攻讀博士學位。其研究領域為入侵檢測與信息安全。</p>
+            </div>
+            <div id="block-7-16-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page8_img3.png" alt="圖片">
+            </div>
+            <div id="block-7-17-original" class="block original">
+                <p>YUEFEI ZHU  was born in 1962. He is currently a Professor and a Doctoral Supervisor with the State Key Laboratory of Mathematical Engineer- ing and Advanced Computing. His research areas are intrusion detection, cryptography, and infor- mation security.</p>
+            </div>
+            <div id="block-7-17-translated" class="block translated">
+                <p>朱躍飛生於1962年。他目前是數學工程與先進計算國家重點實驗室的教授和博士生導師。他的研究領域包括入侵檢測、密碼學和信息安全。</p>
+            </div>
+            <div id="block-7-18-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page8_img4.png" alt="圖片">
+            </div>
+            <div id="block-7-19-original" class="block original">
+                <p>JINLONG FEI  was born in 1980. He is currently an Associate Professor with the State Key Labora- tory of Mathematical Engineering and Advanced Computing. His research areas are network trafﬁc analysis and information security.</p>
+            </div>
+            <div id="block-7-19-translated" class="block translated">
+                <p>費金龍生於1980年，現為數學工程與先進計算國家重點實驗室副教授。他的研究領域包括網絡流量分析和信息安全。</p>
+            </div>
+            <div id="block-7-20-shared" class="block shared-element figure">
+                <img src="output_images/A_Deep_Learning_Approach_for_Intrusion_Detection_Using_Recurrent_Neural_Networks_page8_img5.png" alt="圖片">
+            </div>
+            <div id="block-7-21-original" class="block original">
+                <p>XINZHENG HE  was born in 1978. He is cur- rently pursuing the Ph.D. degree with the State Key Laboratory of Mathematical Engineering and Advanced Computing. His research areas are big data and information security.</p>
+            </div>
+            <div id="block-7-21-translated" class="block translated">
+                <p>何新政生於1978年。他目前正在數學工程與高級計算國家重點實驗室攻讀博士學位。他的研究領域為大數據和信息安全。</p>
+            </div>
+            <div id="block-7-22-original" class="block original">
+                <p>VOLUME 5, 2017 21961</p>
+            </div>
+            <div id="block-7-22-translated" class="block translated">
+                <p>VOLUME 5, 2017 21961</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleView(mode) {
+            const originalBlocks = document.querySelectorAll('.original');
+            const translatedBlocks = document.querySelectorAll('.translated');
+            const buttons = document.querySelectorAll('.toggle-btn');
+            
+            // 重置所有按鈕樣式
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            if (mode === 'original') {
+                // 顯示原文，隱藏翻譯
+                originalBlocks.forEach(block => {
+                    block.style.display = 'block';
+                });
+                translatedBlocks.forEach(block => {
+                    block.style.display = 'none';
+                });
+                document.querySelector('.toggle-btn:nth-child(1)').classList.add('active');
+            } else if (mode === 'translated') {
+                // 顯示翻譯，隱藏原文
+                originalBlocks.forEach(block => {
+                    block.style.display = 'none';
+                });
+                translatedBlocks.forEach(block => {
+                    block.style.display = 'block';
+                });
+                document.querySelector('.toggle-btn:nth-child(2)').classList.add('active');
+            } else if (mode === 'both') {
+                // 顯示雙語對照
+                originalBlocks.forEach(block => {
+                    block.style.display = 'block';
+                });
+                translatedBlocks.forEach(block => {
+                    block.style.display = 'block';
+                });
+                document.querySelector('.toggle-btn:nth-child(3)').classList.add('active');
+            }
+            
+            // 重新渲染數學公式
+            if (window.MathJax) {
+                window.MathJax.typeset();
+            }
+        }
+        
+        // 頁面加載完成後初始化 MathJax
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.MathJax) {
+                window.MathJax.typeset();
+            }
+        });
+    </script>
+</body>
+</html>

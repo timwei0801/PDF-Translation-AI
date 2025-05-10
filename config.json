@@ -1,0 +1,11 @@
+{
+    "pdf_dir": "raw_pdfs",
+    "output_dir": "translated_pdfs",
+    "terminology_dir": "terminology",
+    "embedding_model": "paraphrase-multilingual-MiniLM-L12-v2",
+    "claude_model": "claude-3-7-sonnet-20250219",
+    "default_domain": "general",
+    "api_request_limit": 50,
+    "enable_mcp": true,
+    "presentation_output_dir": "presentations"
+  }
