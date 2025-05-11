@@ -11,6 +11,8 @@ import json
 import argparse
 import shutil
 import glob
+import re
+from collections import defaultdict
 
 def find_matching_image(base_dir, image_path):
     """尋找匹配的圖片文件，支持多種路徑格式"""
@@ -22,31 +24,119 @@ def find_matching_image(base_dir, image_path):
     if os.path.exists(full_path):
         return image_path
     
-    # 嘗試不同的目錄結構
+    # 獲取文件名
     filename = os.path.basename(image_path)
-    possible_paths = [
-        os.path.join("images", filename),
-        os.path.join("translated_pdfs", "images", filename),
-        filename
+    
+    # 檢查所有可能的路徑
+    possible_dirs = [
+        "images", 
+        "translated_pdfs/images", 
+        "output_images",
+        ".",  # 當前目錄
+        ".."  # 上一級目錄
     ]
     
-    for path in possible_paths:
-        full_path = os.path.join(base_dir, path)
-        if os.path.exists(full_path):
-            return path
+    for directory in possible_dirs:
+        possible_path = os.path.join(directory, filename)
+        full_possible_path = os.path.join(base_dir, possible_path)
+        if os.path.exists(full_possible_path):
+            return possible_path
     
-    # 最後嘗試只根據前綴匹配
+    # 使用更靈活的匹配模式
     if '_page' in filename and '_img' in filename:
         prefix = filename.split('_page')[0]
         page_part = filename.split('_page')[1].split('_img')[0]
         img_part = filename.split('_img')[1].split('.')[0]
         
-        # 在整個目錄中查找匹配的圖片
-        for img_file in glob.glob(os.path.join(base_dir, "**", "*.png"), recursive=True):
-            if prefix in img_file and f"page{page_part}" in img_file and f"img{img_part}" in img_file:
-                return os.path.relpath(img_file, base_dir)
+        # 在所有目錄中搜索匹配的圖片
+        for root, _, files in os.walk(base_dir):
+            for file in files:
+                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                    if (prefix in file and 
+                        f"page{page_part}" in file and 
+                        f"img{img_part}" in file):
+                        return os.path.relpath(os.path.join(root, file), base_dir)
+                        
+    # 最後嘗試使用通配符匹配
+    pattern = filename.split('.')[0].replace('_', '*') + '*'
+    matches = []
+    for root, _, files in os.walk(base_dir):
+        for file in files:
+            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                if re.match(pattern, file, re.IGNORECASE):
+                    matches.append(os.path.join(root, file))
+    
+    if matches:
+        return os.path.relpath(matches[0], base_dir)
     
     return None
+
+def merge_adjacent_blocks(blocks):
+    """合併相鄰的同類文本塊"""
+    if not blocks:
+        return []
+    
+    merged_blocks = []
+    current_block = blocks[0].copy()
+    
+    for i in range(1, len(blocks)):
+        block = blocks[i]
+        # 如果當前塊和前一個塊都是文本且內容相似度高，則合併
+        if (block["type"] == current_block["type"] == "text" and 
+            (block.get("content", "").strip() and current_block.get("content", "").strip())):
+            
+            # 檢查內容是否是前一個塊的一部分或延續
+            if (block["content"] in current_block["content"] or 
+                current_block["content"] in block["content"] or
+                # 檢查第一個和最後一個句子是否有連接關係
+                block["content"].startswith(current_block["content"][-20:]) or
+                current_block["content"].endswith(block["content"][:20])):
+                
+                # 合併內容，避免重複
+                if block["content"] not in current_block["content"]:
+                    current_block["content"] += "\n\n" + block["content"]
+                
+                # 合併翻譯內容
+                if ("content_translated" in block and 
+                    "content_translated" in current_block and
+                    block["content_translated"] not in current_block["content_translated"]):
+                    current_block["content_translated"] += "\n\n" + block["content_translated"]
+            else:
+                merged_blocks.append(current_block)
+                current_block = block.copy()
+        else:
+            merged_blocks.append(current_block)
+            current_block = block.copy()
+    
+    merged_blocks.append(current_block)
+    
+    # 去除可能的重複項
+    unique_blocks = []
+    seen_contents = set()
+    
+    for block in merged_blocks:
+        # 為文本塊創建指紋
+        if block["type"] == "text":
+            content = block.get("content", "").strip()
+            if content:
+                content_hash = hash(content[:100])  # 使用前100個字符作為指紋
+                if content_hash not in seen_contents:
+                    seen_contents.add(content_hash)
+                    unique_blocks.append(block)
+            else:
+                unique_blocks.append(block)
+        else:
+            unique_blocks.append(block)
+    
+    return unique_blocks
+
+def clean_html_content(content):
+    """清理HTML內容，移除多餘的換行和空格"""
+    # 替換多個連續空行為單個空行
+    content = re.sub(r'\n{3,}', '\n\n', content)
+    # 清理HTML標籤內的多餘空格
+    content = re.sub(r'>\s+<', '><', content)
+    return content
 
 def create_toggle_html(json_path, output_path=None, copy_images=True):
     """創建可切換原文/翻譯的 HTML
@@ -55,6 +145,9 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
         json_path: 翻譯數據 JSON 文件路徑
         output_path: 輸出 HTML 文件路徑
         copy_images: 是否複製圖片到輸出目錄
+    
+    Returns:
+        HTML 文件路徑
     """
     # 讀取 JSON 文件
     try:
@@ -92,6 +185,11 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
                 available_images.append(rel_path)
     
     print(f"找到 {len(available_images)} 個可用圖片文件")
+    
+    # 合併相鄰的文本塊，避免過度分割
+    for page_idx, page in enumerate(data.get("text_data", [])):
+        if "blocks" in page:
+            page["blocks"] = merge_adjacent_blocks(page["blocks"])
     
     # 更新JSON中的圖片路徑，指向新位置
     if copy_images:
@@ -270,10 +368,10 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
         }
         .page-container {
             background-color: white;
-            padding: 20px;
-            margin: 20px 0;
+            padding: 30px;
+            margin: 30px 0;
             border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
         }
         .page-header {
             background-color: #f0f0f0;
@@ -284,10 +382,11 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
             color: #333;
         }
         .block {
-            padding: 10px;
-            margin-bottom: 15px;
+            padding: 12px;
+            margin-bottom: 18px;
             border-radius: 5px;
             position: relative;
+            line-height: 1.8;
         }
         .original {
             background-color: #f8f9fa;
@@ -301,10 +400,12 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
         .formula {
             font-family: "Courier New", monospace;
             background-color: #f9f9f9;
-            padding: 10px;
+            padding: 15px;
             overflow-x: auto;
             border: 1px solid #ddd;
             border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
         }
         .formula-caption {
             margin-top: 10px;
@@ -314,15 +415,17 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
         .figure {
             text-align: center;
             padding: 10px;
-            margin: 15px 0;
+            margin: 20px 0;
             background-color: #f9f9f9;
             border-radius: 5px;
             border: 1px solid #ddd;
         }
         .figure img {
-            max-width: 100%;
+            max-width: 90%;
             height: auto;
-            margin: 10px 0;
+            margin: 15px auto;
+            display: block;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
         }
         .figure-caption {
             margin-top: 10px;
@@ -331,7 +434,7 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
         }
         .table-container {
             overflow-x: auto;
-            margin: 15px 0;
+            margin: 20px 0;
         }
         .table {
             width: 100%;
@@ -339,7 +442,7 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
             border: 1px solid #ddd;
         }
         .table th, .table td {
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #ddd;
             text-align: left;
         }
@@ -353,7 +456,7 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
             border: 1px solid #ddd;
             border-radius: 5px;
             padding: 15px;
-            margin: 15px 0;
+            margin: 20px 0;
         }
         .page-nav {
             position: fixed;
@@ -370,14 +473,21 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
             font-weight: bold;
             margin-bottom: 10px;
             color: #333;
+            text-align: center;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
         }
         .page-nav a {
             display: block;
-            margin: 5px 0;
+            margin: 8px 0;
             color: #3498db;
             text-decoration: none;
+            padding: 5px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
         }
         .page-nav a:hover {
+            background-color: #f0f0f0;
             text-decoration: underline;
         }
         .placeholder-image {
@@ -402,6 +512,28 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
             .shared-element {
                 display: block !important;
             }
+            .page-container {
+                box-shadow: none;
+                margin: 0;
+                padding: 0;
+            }
+        }
+        /* 針對小屏幕設備的響應式設計 */
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .page-container {
+                padding: 15px;
+                margin: 15px 0;
+            }
+            .page-nav {
+                display: none; /* 在小屏幕上隱藏側邊導航 */
+            }
+            .toggle-btn {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -423,7 +555,7 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
     
     # 添加頁面導航
     for page_idx in range(len(data.get("text_data", []))):
-        html += '            <a href="#page-{0}">第 {0} 頁</a>\n'.format(page_idx+1)
+        html += f'            <a href="#page-{page_idx+1}">第 {page_idx+1} 頁</a>\n'
     
     html += """        </div>
     
@@ -431,8 +563,11 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
     
     # 添加每一頁的內容
     for page_idx, page in enumerate(data.get("text_data", [])):
-        html += '        <div class="page-container" id="page-{0}">\n'.format(page_idx+1)
-        html += '            <div class="page-header">第 {0} 頁</div>\n'.format(page_idx+1)
+        html += f'        <div class="page-container" id="page-{page_idx+1}">\n'
+        html += f'            <div class="page-header">第 {page_idx+1} 頁</div>\n'
+        
+        # 跟踪已處理的圖像，避免重複顯示
+        processed_images = set()
         
         for block_idx, block in enumerate(page.get("blocks", [])):
             block_id = f"block-{page_idx}-{block_idx}"
@@ -440,21 +575,21 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
             # 根據不同的內容類型處理
             if block.get("type") == "text":
                 # 原文區塊
-                html += '            <div id="{0}-original" class="block original">\n'.format(block_id)
+                html += f'            <div id="{block_id}-original" class="block original">\n'
                 content = block.get("content", "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
-                html += '                <p>{0}</p>\n'.format(content)
+                html += f'                <p>{content}</p>\n'
                 html += '            </div>\n'
                 
                 # 翻譯區塊
                 if "content_translated" in block:
-                    html += '            <div id="{0}-translated" class="block translated">\n'.format(block_id)
+                    html += f'            <div id="{block_id}-translated" class="block translated">\n'
                     translated = block.get("content_translated", "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
-                    html += '                <p>{0}</p>\n'.format(translated)
+                    html += f'                <p>{translated}</p>\n'
                     html += '            </div>\n'
             
             elif block.get("type") == "formula":
                 # 處理公式 - 在雙語模式下只顯示一次
-                html += '            <div id="{0}-shared" class="block shared-element formula">\n'.format(block_id)
+                html += f'            <div id="{block_id}-shared" class="block shared-element formula">\n'
                 formula = block.get("content", "").replace("<", "&lt;").replace(">", "&gt;")
                 
                 # 處理公式，支援 TeX 數學公式
@@ -468,70 +603,74 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
                 
                 # 如果有公式標題或說明
                 if "caption" in block:
-                    html += '                <div class="formula-caption original">{0}</div>\n'.format(block.get("caption", ""))
+                    html += f'                <div class="formula-caption original">{block.get("caption", "")}</div>\n'
                     
                 # 如果有翻譯版本的公式描述
                 if "caption_translated" in block:
-                    html += '                <div class="formula-caption translated" style="display:none;">{0}</div>\n'.format(block.get("caption_translated", ""))
+                    html += f'                <div class="formula-caption translated" style="display:none;">{block.get("caption_translated", "")}</div>\n'
                 
                 html += '            </div>\n'
             
             elif block.get("type") in ["figure", "image"]:
                 # 處理圖片 - 在雙語模式下只顯示一次
-                html += '            <div id="{0}-shared" class="block shared-element figure">\n'.format(block_id)
-                
-                # 查找圖片路徑
+                # 創建圖片指紋以避免重複
                 image_path = block.get("image_path", "")
+                image_fingerprint = f"{image_path}-{block.get('caption', '')}"
                 
-                # 檢查圖片文件是否存在
-                local_image_path = os.path.join(output_dir, image_path) if image_path else ""
-                
-                if image_path and os.path.exists(local_image_path):
-                    # 圖片存在，顯示圖片
-                    html += '                <img src="{0}" alt="{1}">\n'.format(image_path, block.get("caption", "圖片"))
+                if image_fingerprint not in processed_images:
+                    processed_images.add(image_fingerprint)
                     
-                    # 圖片標題 - 原文
-                    if "caption" in block:
-                        html += '                <div class="figure-caption original">{0}</div>\n'.format(block.get("caption", ""))
+                    html += f'            <div id="{block_id}-shared" class="block shared-element figure">\n'
                     
-                    # 圖片標題 - 翻譯
-                    if "caption_translated" in block:
-                        html += '                <div class="figure-caption translated" style="display:none;">{0}</div>\n'.format(block.get("caption_translated", ""))
-                else:
-                    # 圖片不存在，顯示預設圖片或錯誤信息
-                    html += '                <div class="placeholder-image">\n'
-                    html += '                    <p>圖片無法顯示</p>\n'
-                    if image_path:
-                        html += f'                    <p>路徑: {image_path}</p>\n'
-                    if "caption" in block:
-                        html += f'                    <p>標題: {block.get("caption", "")}</p>\n'
-                    html += '                </div>\n'
+                    # 檢查圖片文件是否存在
+                    local_image_path = os.path.join(output_dir, image_path) if image_path else ""
                     
-                    # 圖片標題 - 原文
-                    if "caption" in block:
-                        html += '                <div class="figure-caption original">{0}</div>\n'.format(block.get("caption", ""))
+                    if image_path and os.path.exists(local_image_path):
+                        # 圖片存在，顯示圖片
+                        html += f'                <img src="{image_path}" alt="{block.get("caption", "圖片")}">\n'
+                        
+                        # 圖片標題 - 原文
+                        if "caption" in block:
+                            html += f'                <div class="figure-caption original">{block.get("caption", "")}</div>\n'
+                        
+                        # 圖片標題 - 翻譯
+                        if "caption_translated" in block:
+                            html += f'                <div class="figure-caption translated" style="display:none;">{block.get("caption_translated", "")}</div>\n'
+                    else:
+                        # 圖片不存在，顯示預設圖片或錯誤信息
+                        html += '                <div class="placeholder-image">\n'
+                        html += '                    <p>圖片無法顯示</p>\n'
+                        if image_path:
+                            html += f'                    <p>路徑: {image_path}</p>\n'
+                        if "caption" in block:
+                            html += f'                    <p>標題: {block.get("caption", "")}</p>\n'
+                        html += '                </div>\n'
+                        
+                        # 圖片標題 - 原文
+                        if "caption" in block:
+                            html += f'                <div class="figure-caption original">{block.get("caption", "")}</div>\n'
+                        
+                        # 圖片標題 - 翻譯
+                        if "caption_translated" in block:
+                            html += f'                <div class="figure-caption translated" style="display:none;">{block.get("caption_translated", "")}</div>\n'
                     
-                    # 圖片標題 - 翻譯
-                    if "caption_translated" in block:
-                        html += '                <div class="figure-caption translated" style="display:none;">{0}</div>\n'.format(block.get("caption_translated", ""))
-                
-                html += '            </div>\n'
+                    html += '            </div>\n'
                 
             elif block.get("type") == "table":
                 # 處理表格 - 在雙語模式下只顯示一次
-                html += '            <div id="{0}-shared" class="block shared-element table-container">\n'.format(block_id)
+                html += f'            <div id="{block_id}-shared" class="block shared-element table-container">\n'
                 
                 # 表格標題 - 原文
                 if "caption" in block:
-                    html += '                <div class="table-caption original">{0}</div>\n'.format(block.get("caption", ""))
+                    html += f'                <div class="table-caption original">{block.get("caption", "")}</div>\n'
                 
                 # 表格標題 - 翻譯
                 if "caption_translated" in block:
-                    html += '                <div class="table-caption translated" style="display:none;">{0}</div>\n'.format(block.get("caption_translated", ""))
+                    html += f'                <div class="table-caption translated" style="display:none;">{block.get("caption_translated", "")}</div>\n'
                 
                 # 表格內容
                 if "content" in block:
-                    html += '                {0}\n'.format(block["content"])
+                    html += f'                {block["content"]}\n'
                 elif "data" in block:
                     # 創建HTML表格
                     html += '                <table class="table">\n'
@@ -541,7 +680,7 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
                         html += '                    <thead>\n'
                         html += '                        <tr>\n'
                         for cell in block["data"][0]:
-                            html += '                            <th>{0}</th>\n'.format(cell)
+                            html += f'                            <th>{cell}</th>\n'
                         html += '                        </tr>\n'
                         html += '                    </thead>\n'
                         start_row = 1
@@ -553,16 +692,95 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
                     for row in block["data"][start_row:]:
                         html += '                        <tr>\n'
                         for cell in row:
-                            html += '                            <td>{0}</td>\n'.format(cell)
+                            html += f'                            <td>{cell}</td>\n'
                         html += '                        </tr>\n'
                     html += '                    </tbody>\n'
                     html += '                </table>\n'
                 else:
                     html += '                <div style="text-align: center; padding: 20px; background-color: #f0f0f0; color: #666;">表格無法顯示</div>\n'
                 
+                # 添加在blocks循環之後，在頁面循環結束前
+
+                # 處理表格數據
+                if "table_data" in data:
+                    print(f"開始處理表格數據，共有 {len(data['table_data'])} 頁表格數據")
+                    for table_page in data.get("table_data", []):
+                        current_page_num = table_page.get("page_num", 0)
+                        print(f"處理頁面 {current_page_num} 的表格數據")
+                        
+                        if current_page_num == page_idx + 1 and "tables" in table_page:
+                            print(f"頁面 {current_page_num} 有 {len(table_page['tables'])} 個表格")
+                            for table_idx, table in enumerate(table_page["tables"]):
+                                table_id = f"table-{page_idx}-{table_idx}"
+                                
+                                html += f'            <div id="{table_id}" class="block shared-element table-container">\n'
+                                
+                                # 表格標題 - 原文
+                                if "caption" in table:
+                                    html += f'                <div class="table-caption original">{table.get("caption", "")}</div>\n'
+                                    print(f"添加表格標題: {table.get('caption', '')[:30]}...")
+                                
+                                # 表格標題 - 翻譯
+                                if "caption_translated" in table:
+                                    html += f'                <div class="table-caption translated" style="display:none;">{table.get("caption_translated", "")}</div>\n'
+                                
+                                # 創建HTML表格
+                                if "data" in table:
+                                    html += '                <table class="table">\n'
+                                    
+                                    # 處理表頭
+                                    if table.get("has_header", False) and len(table["data"]) > 0:
+                                        html += '                    <thead>\n'
+                                        html += '                        <tr>\n'
+                                        for cell in table["data"][0]:
+                                            html += f'                            <th>{cell}</th>\n'
+                                        html += '                        </tr>\n'
+                                        html += '                    </thead>\n'
+                                        start_row = 1
+                                    else:
+                                        start_row = 0
+                                    
+                                    # 處理表格內容
+                                    html += '                    <tbody>\n'
+                                    for row in table["data"][start_row:]:
+                                        html += '                        <tr>\n'
+                                        for cell in row:
+                                            html += f'                            <td>{cell}</td>\n'
+                                        html += '                        </tr>\n'
+                                    html += '                    </tbody>\n'
+                                    html += '                </table>\n'
+                                    print(f"添加表格內容，包含 {len(table['data'])} 行")
+                                elif "data_translated" in table:
+                                    # 處理翻譯後的表格數據
+                                    html += '                <table class="table translated" style="display:none;">\n'
+                                    
+                                    # 處理表頭
+                                    if table.get("has_header", False) and len(table["data_translated"]) > 0:
+                                        html += '                    <thead>\n'
+                                        html += '                        <tr>\n'
+                                        for cell in table["data_translated"][0]:
+                                            html += f'                            <th>{cell}</th>\n'
+                                        html += '                        </tr>\n'
+                                        html += '                    </thead>\n'
+                                        start_row = 1
+                                    else:
+                                        start_row = 0
+                                    
+                                    # 處理表格內容
+                                    html += '                    <tbody>\n'
+                                    for row in table["data_translated"][start_row:]:
+                                        html += '                        <tr>\n'
+                                        for cell in row:
+                                            html += f'                            <td>{cell}</td>\n'
+                                        html += '                        </tr>\n'
+                                    html += '                    </tbody>\n'
+                                    html += '                </table>\n'
+                                    print(f"添加翻譯後的表格內容，包含 {len(table['data_translated'])} 行")
+                                else:
+                                    html += '                <div style="text-align: center; padding: 20px; background-color: #f0f0f0; color: #666;">表格無法顯示</div>\n'
+                                
+                                html += '            </div>\n'
                 html += '            </div>\n'
-        
-        html += '        </div>\n'
     
     html += """    </div>
 
@@ -615,11 +833,29 @@ def create_toggle_html(json_path, output_path=None, copy_images=True):
             if (window.MathJax) {
                 window.MathJax.typeset();
             }
+            
+            // 添加頁面平滑滾動效果
+            document.querySelectorAll('.page-nav a').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
         });
     </script>
 </body>
 </html>
 """
+    
+    # 清理HTML內容，移除多餘的空格和換行
+    html = clean_html_content(html)
     
     # 保存 HTML 文件
     try:

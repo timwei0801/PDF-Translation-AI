@@ -93,11 +93,11 @@ class PDFProcessor:
         return text_data
     
     def extract_images(self, pdf_path):
-        """從PDF中提取並保存所有圖片
+        """從PDF中提取並保存所有圖片 - 增強版
         
         Args:
             pdf_path: PDF文件路徑
-            
+                
         Returns:
             提取的圖片信息列表
         """
@@ -105,8 +105,12 @@ class PDFProcessor:
         
         # 創建圖片保存目錄（與HTML文件在同一目錄）
         output_basename = os.path.splitext(os.path.basename(pdf_path))[0]
-        images_dir = os.path.join(os.path.dirname(pdf_path), "translated_pdfs", "images")
+        # 創建輸出目錄結構
+        output_dir = os.path.join(os.path.dirname(os.path.dirname(pdf_path)), "translated_pdfs")
+        images_dir = os.path.join(output_dir, "images")
         os.makedirs(images_dir, exist_ok=True)
+        
+        print(f"圖片將被保存到: {images_dir}")
         
         # 打開PDF
         doc = fitz.open(pdf_path)
@@ -154,9 +158,195 @@ class PDFProcessor:
                     
                 except Exception as e:
                     print(f"處理圖片時出錯: {e}")
+            
+            # 新增部分：檢測頁面中無法直接提取的圖表
+            try:
+                # 查找可能含有"Figure"或"Table"字樣的文本塊
+                text_blocks = page.get_text("dict")["blocks"]
+                for block_idx, block in enumerate(text_blocks):
+                    if "lines" in block:
+                        block_text = ""
+                        for line in block["lines"]:
+                            for span in line["spans"]:
+                                block_text += span["text"] + " "
+                        
+                        # 檢查是否是圖表標題
+                        if re.search(r'(figure|fig\.?|圖)\s*\d+', block_text, re.IGNORECASE):
+                            # 這個塊可能是圖表標題，檢查上方的區域
+                            caption = block_text.strip()
+                            x0, y0, x1, y1 = block["bbox"]
+                            
+                            # 假設圖表在標題上方約200-300像素
+                            figure_area = (x0-50, max(0, y0-300), x1+50, y0-5)
+                            
+                            # 創建截圖文件名
+                            fig_filename = f"{output_basename}_page{page_idx+1}_fig{block_idx}.png"
+                            fig_path = os.path.join(images_dir, fig_filename)
+                            
+                            # 使用PyMuPDF的pixmap對象截取這個區域
+                            try:
+                                pix = page.get_pixmap(clip=figure_area, matrix=fitz.Matrix(2, 2))
+                                pix.save(fig_path)
+                                
+                                # 添加到圖片列表
+                                images.append({
+                                    "type": "figure",
+                                    "page_num": page_idx + 1,
+                                    "img_index": 1000 + block_idx,  # 避免與直接提取的圖片索引衝突
+                                    "bbox": [float(coord) for coord in figure_area],
+                                    "image_path": os.path.join("images", fig_filename),
+                                    "caption": caption
+                                })
+                                print(f"已提取可能的圖表區域: {fig_path}")
+                            except Exception as e:
+                                print(f"截取圖表區域時出錯: {e}")
+            except Exception as e:
+                print(f"尋找頁面中的圖表區域時出錯: {e}")
         
         doc.close()
         return images
+    
+    def extract_tables(self, pdf_path):
+        """從PDF中提取所有表格
+        
+        Args:
+            pdf_path: PDF文件路徑
+                
+        Returns:
+            提取的表格信息列表
+        """
+        tables = []
+        
+        try:
+            # 使用pdfplumber提取表格
+            with pdfplumber.open(pdf_path) as pdf:
+                for page_idx, page in enumerate(pdf.pages):
+                    # 提取表格
+                    extracted_tables = page.extract_tables()
+                    
+                    if extracted_tables:
+                        for table_idx, table_data in enumerate(extracted_tables):
+                            # 過濾空行和空單元格
+                            filtered_table = []
+                            for row in table_data:
+                                if any(cell and str(cell).strip() for cell in row):
+                                    filtered_row = [str(cell).strip() if cell else "" for cell in row]
+                                    filtered_table.append(filtered_row)
+                            
+                            if filtered_table:
+                                # 嘗試查找表格標題
+                                caption = self._find_table_caption(page, table_idx)
+                                
+                                # 添加表格信息
+                                tables.append({
+                                    "type": "table",
+                                    "page_num": page_idx + 1,
+                                    "table_idx": table_idx,
+                                    "data": filtered_table,
+                                    "has_header": True,  # 通常第一行為表頭
+                                    "caption": caption
+                                })
+                                
+                                print(f"已提取表格: 頁面 {page_idx+1}, 表格 {table_idx}")
+        except Exception as e:
+            print(f"使用pdfplumber提取表格時出錯: {str(e)}")
+        
+        # 如果pdfplumber未能提取表格，嘗試使用PyMuPDF
+        if not tables:
+            try:
+                doc = fitz.open(pdf_path)
+                for page_idx, page in enumerate(doc):
+                    # 使用PyMuPDF的表格檢測功能
+                    tab = page.find_tables()
+                    if tab and tab.tables:
+                        for table_idx, table in enumerate(tab.tables):
+                            # 從表格單元格中提取數據
+                            table_data = []
+                            
+                            # 按行組織單元格
+                            rows = {}
+                            for cell in table.cells:
+                                row_key = round(cell.y0)  # 使用y0坐標作為行標識
+                                if row_key not in rows:
+                                    rows[row_key] = []
+                                
+                                # 獲取單元格文本
+                                text = page.get_text("text", clip=cell.rect).strip()
+                                rows[row_key].append((cell.x0, text))  # 保存x坐標以便後續排序
+                            
+                            # 按行y坐標排序並創建表格數據
+                            for row_y in sorted(rows.keys()):
+                                # 按x坐標排序單元格
+                                cells = rows[row_y]
+                                cells.sort(key=lambda c: c[0])
+                                
+                                row_data = [text for _, text in cells]
+                                if any(text.strip() for text in row_data):  # 確保行不是空的
+                                    table_data.append(row_data)
+                            
+                            if table_data:
+                                # 尋找表格標題
+                                caption = self._find_table_caption(page, table_idx)
+                                
+                                tables.append({
+                                    "type": "table",
+                                    "page_num": page_idx + 1,
+                                    "table_idx": table_idx,
+                                    "data": table_data,
+                                    "has_header": True,
+                                    "caption": caption
+                                })
+                                
+                                print(f"已使用PyMuPDF提取表格: 頁面 {page_idx+1}, 表格 {table_idx}")
+                
+                doc.close()
+            except Exception as e:
+                print(f"使用PyMuPDF提取表格時出錯: {str(e)}")
+        
+        return tables
+    
+    def _find_table_caption(self, page, table_idx):
+        """查找表格的標題
+        
+        Args:
+            page: PDF頁面對象
+            table_idx: 表格索引
+            
+        Returns:
+            可能的表格標題
+        """
+        try:
+            # 獲取頁面文本
+            text = ""
+            if hasattr(page, 'extract_text'):  # pdfplumber頁面
+                text = page.extract_text()
+            else:  # PyMuPDF頁面
+                text = page.get_text("text")
+            
+            # 尋找各種形式的表格標題
+            patterns = [
+                r'Table\s+\d+[\.\:]\s*([^\n]+)',
+                r'Table\s+\d+\s+([^\n]+)',
+                r'表\s*\d+[\.\:]\s*([^\n]+)',
+                r'Tab\.\s*\d+[\.\:]\s*([^\n]+)'
+            ]
+            
+            # 查找所有匹配
+            all_matches = []
+            for pattern in patterns:
+                matches = re.finditer(pattern, text, re.IGNORECASE)
+                all_matches.extend([(m.start(), m.group(0)) for m in matches])
+            
+            # 按位置排序
+            all_matches.sort()
+            
+            # 嘗試找到對應這個表格的標題
+            if table_idx < len(all_matches):
+                return all_matches[table_idx][1].strip()
+        except Exception as e:
+            print(f"查找表格標題時出錯: {e}")
+        
+        return ""
     
     def _find_image_caption(self, page, bbox):
         """查找圖片附近的標題文本

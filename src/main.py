@@ -114,11 +114,11 @@ class PDFTranslationSystem:
             logger.warning(f"在 {terminology_dir} 中沒有找到有效的術語文件")
     
     def process_pdf(self, pdf_filename):
-        """處理單個PDF文件
+        """處理單個PDF文件 - 增強版
         
         Args:
             pdf_filename: PDF文件名（不含路徑）
-            
+                
         Returns:
             處理結果
         """
@@ -128,9 +128,40 @@ class PDFTranslationSystem:
             logger.error(f"文件不存在: {pdf_path}")
             return None
         
+        # 創建明確的輸出目錄結構
+        output_dir = self.output_dir
+        images_dir = os.path.join(output_dir, "images")
+        os.makedirs(images_dir, exist_ok=True)
+        
+        # 記錄路徑信息到日誌
+        logger.info(f"輸入PDF路徑: {pdf_path}")
+        logger.info(f"輸出目錄: {output_dir}")
+        logger.info(f"圖片目錄: {images_dir}")
+        
         # 第一步：解析PDF
         logger.info(f"解析PDF: {pdf_filename}")
         pdf_data = self.pdf_processor.process_pdf(pdf_path)
+        
+        # 新增步驟：專門提取圖片
+        logger.info(f"提取圖片: {pdf_filename}")
+        images = self.pdf_processor.extract_images(pdf_path)
+        pdf_data["images"] = images
+        
+        # 新增步驟：專門提取表格
+        logger.info(f"提取表格: {pdf_filename}")
+        tables = self.pdf_processor.extract_tables(pdf_path)
+        
+        # 按頁面組織表格數據
+        table_data = []
+        max_page = max([table["page_num"] for table in tables], default=0)
+        for page_num in range(1, max_page + 1):
+            page_tables = [table for table in tables if table["page_num"] == page_num]
+            if page_tables:
+                table_data.append({
+                    "page_num": page_num,
+                    "tables": page_tables
+                })
+        pdf_data["table_data"] = table_data
         
         # 第二步：確定文檔領域
         domain = self.config.get("default_domain", "general")
@@ -139,25 +170,58 @@ class PDFTranslationSystem:
         logger.info(f"開始翻譯: {pdf_filename}")
         translated_data = self._translate_document(pdf_data, domain)
         
-        # 第四步：保存翻譯數據（用於後續處理）- 移到這裡，確保在生成PDF前保存
+        # 第四步：保存翻譯數據
         json_output = os.path.join(self.output_dir, f"{os.path.splitext(pdf_filename)[0]}_translation_data.json")
         with open(json_output, 'w', encoding='utf-8') as f:
-            # 移除無法序列化的部分（如圖像數據）
+            # 移除無法序列化的部分
             serializable_data = self._prepare_for_serialization(translated_data)
             json.dump(serializable_data, f, ensure_ascii=False, indent=2)
         
-        # 第五步：生成翻譯後的PDF
+        # 第五步：修復圖片路徑
+        try:
+            from .fix_image_paths import fix_image_paths
+            fixed_data = fix_image_paths(json_output, save=True)
+            logger.info(f"已修復圖片路徑")
+        except Exception as e:
+            logger.error(f"修復圖片路徑時出錯: {str(e)}")
+        
+        # 第六步：生成翻譯後的PDF
         output_path = os.path.join(self.output_dir, f"translated_{pdf_filename}")
         try:
             self._generate_translated_pdf(pdf_path, translated_data, output_path)
         except Exception as e:
             logger.error(f"生成PDF時出錯: {str(e)}")
             logger.info(f"翻譯數據已保存到: {json_output}")
-            
+                
+        # 添加診斷信息
+        logger.info("\n=== 診斷信息 ===")
+        logger.info(f"處理的PDF文件: {pdf_filename}")
+        logger.info(f"輸出JSON文件: {json_output}")
+        
+        # 檢查圖片
+        image_count = len(translated_data.get("images", []))
+        logger.info(f"提取的圖片數量: {image_count}")
+        
+        # 檢查表格
+        table_pages = len(translated_data.get("table_data", []))
+        table_count = sum(len(page.get("tables", [])) for page in translated_data.get("table_data", []))
+        logger.info(f"提取的表格頁數: {table_pages}")
+        logger.info(f"提取的表格數量: {table_count}")
+        
+        # 檢查圖片文件
+        images_dir = os.path.join(self.output_dir, "images")
+        if os.path.exists(images_dir):
+            image_files = len([f for f in os.listdir(images_dir) if f.endswith(('.png', '.jpg', '.jpeg', '.gif'))])
+            logger.info(f"圖片目錄中的文件數量: {image_files}")
+        
+        logger.info("=== 診斷結束 ===\n")
+        
         return {
             "original_pdf": pdf_filename,
             "translated_pdf": f"translated_{pdf_filename}",
-            "translation_data": json_output
+            "translation_data": json_output,
+            "image_count": image_count,
+            "table_count": table_count
         }
     
     def _translate_document(self, pdf_data, domain):

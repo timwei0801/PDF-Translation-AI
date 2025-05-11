@@ -1,5 +1,5 @@
 {
-  "translation_time": "2025-05-11 05:01:02",
+  "translation_time": "2025-05-11 20:32:53",
   "total_pdfs": 1,
   "processed_files": [
     {
@@ -9,16 +9,16 @@
     }
   ],
   "api_usage": {
-    "total_requests": 28,
-    "total_input_chars": 32961,
-    "total_output_chars": 17639,
+    "total_requests": 14,
+    "total_input_chars": 23544,
+    "total_output_chars": 9148,
     "request_types": {
-      "text": 20,
-      "table": 8
+      "text": 14
     },
     "domains": {
-      "general": 20
+      "general": 14
     },
-    "avg_output_input_ratio": 0.5351475986772246
+    "terms_in_memory": 14,
+    "avg_output_input_ratio": 0.3885490995582739
   }
 }
